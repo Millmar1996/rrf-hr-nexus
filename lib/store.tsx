@@ -31,7 +31,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     saveEmployee: (employee) => setData((old) => ({ ...old, employees: [employee, ...old.employees.filter((e) => e.id !== employee.id)] })),
     archiveEmployee: (id) => setData((old) => ({ ...old, employees: old.employees.map((e) => e.id === id ? { ...e, archived: true, updatedAt: new Date().toISOString() } : e) })),
     recordEvent: (event) => {
-      const created: LifecycleEvent = { ...event, id: "evt-" + Date.now(), recordedAt: new Date().toISOString(), recordedBy: "Lourdes Villamor" };
+      const created: LifecycleEvent = { ...event, id: "evt-" + Date.now(), recordedAt: new Date().toISOString(), recordedBy: "Millmar" };
       setData((old) => {
         const updates: Partial<Employee> = event.type === "Promotion" && event.newValue ? { position: event.newValue } :
           event.type === "Transfer" && event.newValue ? { department: event.newValue } :

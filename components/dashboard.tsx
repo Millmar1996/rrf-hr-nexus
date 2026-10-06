@@ -1,51 +1,104 @@
 "use client";
+
 import Link from "next/link";
-import { Activity, ArrowRight, BriefcaseBusiness, Cake, CheckCircle2, ChevronRight, Clock3, FileWarning, Laptop, Plus, UserRoundPlus, Users, UserRoundCheck, Armchair, CalendarDays } from "lucide-react";
+import { ArrowRight, ArrowUpRight, FileWarning, Laptop, Plus, Repeat2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import type { LifecycleEvent } from "@/lib/types";
 
-const month = new Date().toLocaleDateString("en-PH", { month: "long", year: "numeric" });
-const dateLabel = new Date().toLocaleDateString("en-PH", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
 function initials(name: string) { return name.split(" ").map((part) => part[0]).slice(0, 2).join(""); }
+function daypart() {
+  const hour = new Date().getHours();
+  return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+}
+function todayLabel() { return new Date().toLocaleDateString("en-PH", { weekday: "long", month: "long", day: "numeric" }); }
+function activityDate(value: string) {
+  const date = new Date(value);
+  const today = new Date();
+  if (date.toDateString() === today.toDateString()) return "Today · " + date.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" });
+  const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+  return date.toDateString() === yesterday.toDateString() ? "Yesterday" : date.toLocaleDateString("en-PH", { month: "short", day: "numeric" });
+}
+function eventCopy(event: LifecycleEvent) {
+  if (event.type === "Hire") return "Joined as " + event.newValue;
+  if (event.type === "Promotion") return "Promoted to " + event.newValue;
+  if (event.type === "Client Reassignment") return "Assigned to " + event.newValue;
+  if (event.type === "Regularization") return "Regularized from probation";
+  if (event.type === "Transfer") return "Transferred to " + event.newValue;
+  if (event.type === "Separation") return "Separated from RRFMG";
+  return event.notes;
+}
+
 export function Dashboard() {
   const { employees, events, resources } = useStore();
-  const active = employees.filter((e) => !e.archived && e.status !== "Separated");
-  const probationary = active.filter((e) => e.status === "Probationary");
-  const newHires = employees.filter((e) => e.hiredAt.slice(0, 7) === new Date().toISOString().slice(0, 7)).length;
-  const assigned = resources.filter((r) => r.status === "Assigned").length;
-  const missing = 5;
-  const dueSoon = probationary.length || 3;
+  const currentEmployees = employees.filter((employee) => !employee.archived && employee.status !== "Separated");
+  const reviews = currentEmployees.filter((employee) => employee.status === "Probationary").length;
+  const newHires = currentEmployees.filter((employee) => employee.hiredAt.slice(0, 7) === new Date().toISOString().slice(0, 7)).length;
+  const availableSeats = resources.filter((resource) => resource.type === "Seat / Workstation" && resource.status === "Available").length;
   const activity = [...events].sort((a, b) => b.recordedAt.localeCompare(a.recordedAt)).slice(0, 5);
-  const employeeName = (id: string) => { const e = employees.find((item) => item.id === id); return e ? e.firstName + " " + e.lastName : "Employee"; };
-  const subtitle = (event: LifecycleEvent) => event.type === "Hire" ? "Joined as " + event.newValue : event.type === "Promotion" ? "Promoted from " + event.previousValue + " to " + event.newValue : event.type === "Client Reassignment" ? "Client assignment changed to " + event.newValue : event.type === "Regularization" ? "Employment status changed to regular" : event.type === "Transfer" ? "Transferred to " + event.newValue : event.notes;
-  const docData = [{ label: "Complete", value: 14, tone: "green" }, { label: "Incomplete", value: 5, tone: "amber" }, { label: "Expiring soon", value: 2, tone: "blue" }, { label: "Missing critical", value: 3, tone: "red" }];
-  return <div className="page-stack">
-    <div className="welcome-row"><div><p className="eyebrow">{dateLabel}</p><h1>Good morning, Lourdes</h1><p className="muted">Here’s what’s happening with your workforce today.</p></div><Link className="button primary" href="/employees/new"><Plus size={16}/> Add employee</Link></div>
-    <section className="metric-grid" aria-label="Workforce summary">
-      {[
-        { label: "Total employees", value: employees.filter((e) => !e.archived).length, detail: "Across 5 departments", icon: Users, href: "/employees", color: "navy" },
-        { label: "Active employees", value: active.length, detail: "Including employees on leave", icon: UserRoundCheck, href: "/employees?status=Active", color: "green" },
-        { label: "New hires this month", value: newHires, detail: month, icon: UserRoundPlus, href: "/workforce/lifecycle", color: "blue" },
-        { label: "Pending regularization", value: dueSoon, detail: "Review dates approaching", icon: Clock3, href: "/workforce/lifecycle", color: "amber" },
-        { label: "Incomplete 201 files", value: missing, detail: "Require HR follow-up", icon: FileWarning, href: "/records/201-files", color: "red" },
-        { label: "Available workstations", value: resources.filter((r) => r.type === "Seat / Workstation" && r.status === "Available").length, detail: "Seats ready for assignment", icon: Armchair, href: "/resources", color: "slate" },
-      ].map((metric) => <Link href={metric.href} className="metric-card" key={metric.label}><span className={"metric-icon " + metric.color}><metric.icon size={17}/></span><span className="metric-label">{metric.label}</span><strong className="metric-value">{metric.value}</strong><span className="metric-detail">{metric.detail}</span><ChevronRight className="metric-arrow" size={16}/></Link>)}
+  const employeeName = (id: string) => { const employee = employees.find((item) => item.id === id); return employee ? employee.firstName + " " + employee.lastName : "Employee"; };
+  const comingUp = [
+    ...currentEmployees.filter((e) => e.birthday).map((e) => { const [, m, d] = e.birthday.split("-").map(Number); let date = new Date(new Date().getFullYear(), m - 1, d, 12); if (date < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 12)) date = new Date(date.getFullYear() + 1, m - 1, d, 12); return { employee: e, date, label: "Birthday" }; }),
+    ...currentEmployees.filter((e) => e.status === "Probationary" && e.regularizationDate).map((e) => ({ employee: e, date: new Date(e.regularizationDate + "T12:00:00"), label: "Regularization review" })),
+  ].sort((a, b) => a.date.getTime() - b.date.getTime()).slice(0, 3);
+  const redDate = new Date(); redDate.setDate(redDate.getDate() + 30);
+  const attention = [
+    { title: "Missing 201 documents", detail: "Employees to follow up", count: 5, href: "/records/201-files" },
+    { title: "Regularization reviews", detail: "Due within 30 days", count: reviews, href: "/workforce/lifecycle" },
+    { title: "Unassigned workstations", detail: "Employees without a seat", count: currentEmployees.filter((e) => !e.seat).length, href: "/resources" },
+    { title: "Expiring documents", detail: "Review before renewal", count: 1, href: "/records/201-files" },
+  ];
+  const assigned = resources.filter((resource) => resource.status === "Assigned").length;
+  const available = resources.filter((resource) => resource.status === "Available").length;
+  const maintenance = resources.filter((resource) => resource.status === "Maintenance").length;
+  const compliance = 70;
+
+  return <div className="page-stack dashboard-page">
+    <section className="dashboard-editorial">
+      <div className="dashboard-welcome">
+        <p className="dashboard-date">{todayLabel()} <span>·</span> Tuguegarao Branch</p>
+        <p className="editorial-greeting">{daypart()},<br/><em>Millmar.</em></p>
+        <p className="intro-copy">Here’s what needs your attention across the team today.</p>
+        <div className="dashboard-actions">
+          <Link href="/employees/new" className="button primary"><Plus size={17}/> Add employee</Link>
+          <Link href="/workforce/lifecycle" className="text-action"><Repeat2 size={16}/> Record movement</Link>
+          <Link href="/records/201-files" className="text-action"><FileWarning size={16}/> Review 201 files</Link>
+          <Link href="/resources" className="text-action"><Laptop size={16}/> Assign resource</Link>
+        </div>
+      </div>
+      <Link href="/workforce/lifecycle" className="feature-panel dashboard-feature">
+        <span className="feature-kicker">UPCOMING · WORKFORCE</span>
+        <b className="feature-number">{reviews}</b>
+        <span className="feature-title">Regularization<br/>reviews are due</span>
+        <span className="feature-rule"/>
+        <span className="feature-footer">Review before {redDate.toLocaleDateString("en-PH", { month: "long", day: "numeric" })}<span>Review employees <ArrowUpRight size={17}/></span></span>
+        <span className="feature-index" aria-hidden="true">01</span>
+      </Link>
     </section>
-    <div className="dashboard-grid">
-      <section className="panel activity-panel"><div className="panel-head"><div><h2>Recent employee activity</h2><p>Lifecycle updates across your branch</p></div><Link href="/workforce/lifecycle" className="text-link">View all <ArrowRight size={14}/></Link></div>
-        <div className="activity-list">{activity.map((event) => <Link href={"/employees/" + event.employeeId} className="activity-item" key={event.id}><span className="activity-avatar">{initials(employeeName(event.employeeId))}</span><span className="activity-copy"><b>{employeeName(event.employeeId)}</b><span>{subtitle(event)}</span></span><span className="activity-meta"><span className="event-tag">{event.type}</span><small>{event.effectiveDate === new Date().toISOString().slice(0, 10) ? "Today" : new Date(event.effectiveDate + "T12:00:00").toLocaleDateString("en-PH", { month: "short", day: "numeric" })}</small></span></Link>)}</div>
+
+    <section className="snapshot" aria-labelledby="snapshot-title">
+      <div className="snapshot-heading"><span id="snapshot-title">WORKFORCE SNAPSHOT</span><Link href="/employees">View directory <ArrowRight size={14}/></Link></div>
+      <div className="snapshot-metrics">
+        <Link href="/employees" className="snapshot-metric"><b>{currentEmployees.length}</b><span>Employees</span></Link>
+        <Link href="/employees" className="snapshot-metric"><b>{newHires}</b><span>New this month</span></Link>
+        <Link href="/records/201-files" className="snapshot-metric"><b>5</b><span>File issues</span></Link>
+        <Link href="/resources" className="snapshot-metric"><b>{availableSeats}</b><span>Seats available</span></Link>
+      </div>
+    </section>
+
+    <section className="dashboard-columns">
+      <section className="recent-activity" aria-labelledby="recent-title">
+        <div className="editorial-section-heading"><div><p className="section-overline">LATEST WORKFORCE CHANGES</p><h2 id="recent-title">Recent activity</h2></div><Link href="/workforce/lifecycle" className="text-action">View lifecycle <ArrowRight size={15}/></Link></div>
+        <div className="editorial-activity-list">{activity.length ? activity.map((event, index) => <Link href={"/employees/" + event.employeeId} className="editorial-activity-row" key={event.id}><span className={"activity-avatar avatar-tone-" + (index % 4)}>{initials(employeeName(event.employeeId))}</span><span className="activity-copy"><b>{employeeName(event.employeeId)}</b><span>{eventCopy(event)}</span><small>{activityDate(event.recordedAt)}</small></span><span className="activity-category">{event.type}</span></Link>) : <p className="activity-empty">Recent employee changes will appear here.</p>}</div>
       </section>
-      <section className="panel attention-panel"><div className="panel-head"><div><h2>Needs attention</h2><p>Items for your review</p></div><span className="attention-count">4</span></div>
-        <ul className="attention-list"><li><span className="attention-dot red-dot"><FileWarning size={15}/></span><span><b>{missing} employees missing documents</b><small>201 file checklist needs updating</small></span><Link href="/records/201-files" aria-label="Review missing documents"><ChevronRight size={17}/></Link></li><li><span className="attention-dot amber-dot"><Clock3 size={15}/></span><span><b>{dueSoon} regularization reviews due</b><small>Within the next 30 days</small></span><Link href="/workforce/lifecycle" aria-label="Review regularizations"><ChevronRight size={17}/></Link></li><li><span className="attention-dot blue-dot"><Armchair size={15}/></span><span><b>{resources.filter((r) => r.status === "Available").length} available seats</b><small>Ready for a new assignment</small></span><Link href="/resources" aria-label="View resources"><ChevronRight size={17}/></Link></li><li><span className="attention-dot slate-dot"><FileWarning size={15}/></span><span><b>1 document expiring soon</b><small>Review before renewal</small></span><Link href="/records/201-files" aria-label="Review expiring documents"><ChevronRight size={17}/></Link></li></ul>
-      </section>
-    </div>
-    <div className="dashboard-grid lower-grid">
-      <section className="panel"><div className="panel-head"><div><h2>201 file status</h2><p>Branch-wide document completeness</p></div><Link href="/records/201-files" className="text-link">Open records <ArrowRight size={14}/></Link></div><div className="compliance-bar" role="img" aria-label="201 file completeness: 14 complete, 5 incomplete, 2 expiring soon, 3 missing critical documents"><span className="bar-green"/><span className="bar-amber"/><span className="bar-blue"/><span className="bar-red"/></div><div className="legend-grid">{docData.map((item) => <div className="legend-item" key={item.label}><span className={"legend-dot " + item.tone}/><span>{item.label}</span><b>{item.value}</b></div>)}</div></section>
-      <section className="panel"><div className="panel-head"><div><h2>Resource status</h2><p>Workstations and assigned equipment</p></div><Link href="/resources" className="text-link">Manage <ArrowRight size={14}/></Link></div><div className="resource-summary"><div><small>Total tracked</small><b>{resources.length}</b></div><div><small>Assigned</small><b>{assigned}</b></div><div><small>Available</small><b>{resources.filter((r) => r.status === "Available").length}</b></div></div><div className="resource-note"><span className="status-pill good"><CheckCircle2 size={13}/> {resources.filter((r) => r.status === "Available").length} ready to assign</span><span className="small-muted">Across seats, computers & equipment</span></div></section>
-    </div>
-    <div className="dashboard-grid lower-grid">
-      <section className="panel"><div className="panel-head"><div><h2>Upcoming dates</h2><p>Birthdays, anniversaries and reviews</p></div><span className="month-chip">{month}</span></div><div className="upcoming-list">{[{icon:Cake,name:"Angela Reyes",desc:"Birthday",date:"Oct 12",tone:"peach"},{icon:BriefcaseBusiness,name:"Daniel Castillo",desc:"3 year anniversary",date:"Oct 16",tone:"lavender"},{icon:CalendarDays,name:"Juan Dela Cruz",desc:"Regularization review",date:"Oct 21",tone:"mint"}].map((x)=><div className="upcoming-item" key={x.name}><span className={"upcoming-icon "+x.tone}><x.icon size={16}/></span><span className="upcoming-copy"><b>{x.name}</b><small>{x.desc}</small></span><time>{x.date}</time></div>)}</div></section>
-      <section className="panel"><div className="panel-head"><div><h2>Quick actions</h2><p>Common HR tasks</p></div></div><div className="quick-grid"><Link href="/employees/new"><span><Plus size={17}/></span><b>Add employee</b><small>Create a personnel record</small></Link><Link href="/workforce/lifecycle"><span><Activity size={17}/></span><b>Record lifecycle event</b><small>Promotion, transfer or status</small></Link><Link href="/resources"><span><Laptop size={17}/></span><b>Assign resource</b><small>Allocate a seat or device</small></Link><Link href="/records/201-files"><span><FileWarning size={17}/></span><b>Review 201 files</b><small>Check missing documents</small></Link></div></section>
-    </div>
+      <div className="dashboard-side-content">
+        <section className="attention-surface" aria-labelledby="attention-title"><div className="editorial-section-heading"><div><p className="section-overline">PRIORITIES</p><h2 id="attention-title">Needs attention</h2></div><span className="attention-total">04</span></div><div className="attention-editorial-list">{attention.map((item, index) => <Link href={item.href} className="attention-editorial-row" key={item.title}><span className="attention-index">0{index + 1}</span><span><b>{item.title}</b><small>{item.count} {item.detail.toLowerCase()}</small></span><ArrowRight size={15}/></Link>)}</div></section>
+        <section className="coming-up" aria-labelledby="coming-title"><div className="editorial-section-heading"><div><p className="section-overline">DATES TO KNOW</p><h2 id="coming-title">Coming up</h2></div><Link href="/workforce/lifecycle" className="text-action">All events</Link></div>{comingUp.length ? <div className="coming-list">{comingUp.map(({ employee, date, label }) => <Link href={"/employees/" + employee.id} className="coming-row" key={employee.id + label}><span className="coming-date"><small>{date.toLocaleDateString("en-PH", { month: "short" }).toUpperCase()}</small><b>{date.toLocaleDateString("en-PH", { day: "2-digit" })}</b></span><span><b>{employee.firstName} {employee.lastName}</b><small>{label}</small></span></Link>)}</div> : <p className="activity-empty">No upcoming dates on record.</p>}</section>
+      </div>
+    </section>
+
+    <section className="dashboard-health-grid">
+      <section className="compliance-feature"><div className="compliance-head"><div><p className="section-overline">DOCUMENT COMPLIANCE</p><h2>201 file health</h2></div><Link href="/records/201-files" className="text-action">Review files <ArrowRight size={15}/></Link></div><div className="compliance-score"><b>{compliance}%</b><span>complete</span></div><div className="document-progress" role="img" aria-label={compliance + " percent complete across employee 201 files"}><i style={{ width: compliance + "%" }}/></div><div className="compliance-breakdown"><span><i className="dot-success"/>14 Complete</span><span><i className="dot-warning"/>5 Incomplete</span><span><i className="dot-info"/>2 Expiring</span><span><i className="dot-danger"/>3 Critical</span></div></section>
+      <Link href="/resources" className="feature-panel resource-feature"><span className="feature-kicker">BRANCH INVENTORY</span><span className="resource-feature-title">Resource<br/><em>availability</em></span><span className="resource-feature-count"><b>{resources.length}</b> tracked <i/> <b>{available}</b> available</span><span className="resource-feature-note">{assigned} assigned · {maintenance} in maintenance</span><span className="feature-rule"/><span className="resource-feature-link">Manage resources <ArrowUpRight size={17}/></span><span className="feature-index" aria-hidden="true">02</span></Link>
+    </section>
   </div>;
 }
