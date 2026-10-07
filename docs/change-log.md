@@ -20,3 +20,9 @@
 - Kept Supabase Auth as the session identity needed by the existing RLS-protected HR tables, Storage, and RPCs. Provisioned the one internal Millmar Agustin `ADMIN` identity without a mailbox or email confirmation step.
 - Added an HTTP-only, `SameSite=Lax`, production `Secure` 10-hour session cookie, server token bridge for browser RLS requests, one common route guard, no-store protected responses, and logout cache clearing.
 - Configured local ignored `.env.local` and Vercel Production, Preview, and Development environment variables. Production, authenticated route, session, and logout smoke results are recorded in `docs/testing.md`.
+# 2026-10-07 — Monthly HR report and exports
+
+- Added `/reports/monthly` with month/year selection, in-app preview, workforce movement details, 201 compliance, document expirations, resource movements, birthdays, anniversaries, regularization monitoring, and period comparison.
+- Added shared authenticated report generation used by preview, Excel workbook, and printable A4 PDF endpoints. Exports are generated from Supabase records and do not persist monthly totals.
+- Added workbook sheets for summary, workforce snapshot, new hires, lifecycle movements, client assignments, 201 compliance, resources, and people events.
+- Documented Manila date boundaries and the historical snapshot limits of the existing document/resource schema.

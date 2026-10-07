@@ -11,6 +11,7 @@ import { EmployeesPage, EmployeeFormPage, EmployeeProfilePage } from "./employee
 import { LifecyclePage, FilesPage, ResourcesPage, ReportsPage, SettingsPage, WorkforceChangesPage, OrganizationPage } from "./modules";
 import { useStore } from "@/lib/store";
 import { clearAccessToken } from "@/lib/supabase/client";
+import { MonthlyHRReportPage } from "./monthly-report";
 
 const navGroups = [
   { label: "", links: [{ label: "Overview", href: "/dashboard", icon: LayoutDashboard }, { label: "Employees", href: "/employees", icon: Users }] },
@@ -43,7 +44,7 @@ function titleFor(path: string, employeeName?: string) {
   if (path === "/employees/new") return "Add employee";
   if (path.startsWith("/employees/") && path.endsWith("/edit")) return employeeName ? "Employees / " + employeeName + " / Edit" : "Edit employee";
   if (path.startsWith("/employees/")) return employeeName ? "Employees / " + employeeName : "Employee profile";
-  const titles: Record<string, string> = { "/workforce/lifecycle": "Employee lifecycle", "/workforce/assignments": "Client assignments", "/workforce/client-assignments": "Client assignments", "/records/201-files": "201 files", "/resources": "Resource monitoring", "/reports": "Reports", "/reports/workforce-changes": "Monthly workforce changes", "/organization": "Organization structure", "/settings": "Settings" };
+  const titles: Record<string, string> = { "/workforce/lifecycle": "Employee lifecycle", "/workforce/assignments": "Client assignments", "/workforce/client-assignments": "Client assignments", "/records/201-files": "201 files", "/resources": "Resource monitoring", "/reports": "Reports", "/reports/monthly": "Monthly HR Report", "/reports/workforce-changes": "Monthly workforce changes", "/organization": "Organization structure", "/settings": "Settings" };
   return titles[path] || "RRF HR Nexus";
 }
 
@@ -78,6 +79,7 @@ export function AppShell({ profile, notice, authConfigured }: { profile: Workspa
   else if (active === "/records/201-files") page = <FilesPage />;
   else if (active === "/resources") page = <ResourcesPage />;
   else if (active === "/reports") page = <ReportsPage />;
+  else if (active === "/reports/monthly") page = <MonthlyHRReportPage />;
   else if (active === "/reports/workforce-changes") page = <WorkforceChangesPage />;
   else if (active === "/organization") page = <OrganizationPage />;
   else if (active === "/settings") page = <SettingsPage role={profile?.role} />;

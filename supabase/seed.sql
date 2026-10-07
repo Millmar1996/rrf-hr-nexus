@@ -74,6 +74,30 @@ join public.employment_statuses es on es.name = demo.employment_status
 join public.locations l on l.name = 'Tuguegarao City'
 on conflict (employee_number) do nothing;
 
+-- Fictional October reporting fixtures keep the monthly report demonstrable.
+with demo(employee_number, first_name, middle_name, last_name, department_name, position_name, employment_type, employment_status, hired_on, regularizes_on, email) as (values
+  ('RR-02421','Leah','','Mercado','Client Services','Client Support Associate','Probationary','Probationary','2026-10-01','2027-04-01','leah.mercado@rrfmg.example'),
+  ('RR-02422','Ethan','','Moreno','Operations','Operations Analyst','Regular','Separated','2024-03-05','2024-09-05','ethan.moreno@rrfmg.example')
+)
+insert into public.employees (
+  employee_number, first_name, middle_name, last_name, email, date_hired, regularization_date, birthday,
+  department_id, position_id, employment_type_id, employment_status_id, work_location_id, is_archived, archived_at
+)
+select demo.employee_number, demo.first_name, nullif(demo.middle_name, ''), demo.last_name, demo.email,
+       demo.hired_on::date, demo.regularizes_on::date,
+       case when demo.employee_number = 'RR-02421' then date '1998-10-11' else null end,
+       d.id, p.id, et.id, es.id, l.id,
+       demo.employee_number = 'RR-02422', case when demo.employee_number = 'RR-02422' then timestamptz '2026-10-05 09:00:00+08' else null end
+from demo
+join public.departments d on d.name = demo.department_name
+join public.positions p on p.name = demo.position_name and p.department_id = d.id
+join public.employment_types et on et.name = demo.employment_type
+join public.employment_statuses es on es.name = demo.employment_status
+join public.locations l on l.name = 'Tuguegarao City'
+on conflict (employee_number) do nothing;
+
+update public.employees set birthday = date '1994-10-11' where employee_number = 'RR-02401' and birthday is null;
+
 insert into public.employee_client_assignments(employee_id, client_id, start_date)
 select e.id, c.id, e.date_hired
 from (values
@@ -88,6 +112,28 @@ from (values
 join public.employees e on e.employee_number = assignment.employee_number
 join public.clients c on c.name = assignment.client_name
 on conflict do nothing;
+
+insert into public.employee_client_assignments(employee_id, client_id, start_date)
+select e.id, c.id, date '2026-10-01' from public.employees e join public.clients c on c.name = 'Pacific Ledger Co.'
+where e.employee_number = 'RR-02421' and not exists (select 1 from public.employee_client_assignments a where a.employee_id = e.id and a.start_date = date '2026-10-01');
+insert into public.employee_client_assignments(employee_id, client_id, start_date, end_date)
+select e.id, c.id, date '2024-03-05', date '2026-10-05' from public.employees e join public.clients c on c.name = 'Cedarline Logistics'
+where e.employee_number = 'RR-02422' and not exists (select 1 from public.employee_client_assignments a where a.employee_id = e.id and a.start_date = date '2024-03-05');
+
+-- Fictional client reassignment effective October 6.
+update public.employee_client_assignments a set end_date = date '2026-10-06'
+from public.employees e join public.clients c on c.name = 'Northstar Retail'
+where a.employee_id = e.id and e.employee_number = 'RR-02405' and a.client_id = c.id and a.end_date is null;
+insert into public.employee_client_assignments(employee_id, client_id, start_date)
+select e.id, c.id, date '2026-10-06' from public.employees e join public.clients c on c.name = 'Cedarline Logistics'
+where e.employee_number = 'RR-02405' and not exists (select 1 from public.employee_client_assignments a where a.employee_id = e.id and a.start_date = date '2026-10-06');
+
+-- Fictional transfer fixtures update the current employee assignments as well as their history.
+update public.employees set work_location_id = (select id from public.locations where name = 'Tuguegarao · Floor 2')
+where employee_number = 'RR-02404';
+update public.employees set department_id = (select id from public.departments where name = 'Human Resources'),
+  position_id = (select id from public.positions where name = 'HR Assistant' and department_id = (select id from public.departments where name = 'Human Resources'))
+where employee_number = 'RR-02415';
 
 insert into public.employee_lifecycle_events(employee_id, event_type, effective_date, previous_data, new_data, notes)
 select e.id, 'HIRE', e.date_hired, '{}'::jsonb, jsonb_build_object('position_id', e.position_id), 'Fictional demo hire record'
@@ -105,6 +151,30 @@ select e.id, 'REGULARIZATION', date '2026-10-04', jsonb_build_object('employment
        jsonb_build_object('employment_type', 'Regular'), 'Fictional demo regularization activity'
 from public.employees e where e.employee_number = 'RR-02403'
 and not exists (select 1 from public.employee_lifecycle_events x where x.employee_id = e.id and x.event_type = 'REGULARIZATION' and x.effective_date = date '2026-10-04');
+
+insert into public.employee_lifecycle_events(employee_id, event_type, effective_date, previous_data, new_data, notes)
+select e.id, 'LOCATION_TRANSFER', date '2026-10-06', jsonb_build_object('location', 'Tuguegarao City'),
+       jsonb_build_object('location', 'Tuguegarao · Floor 2'), 'Fictional demo location transfer'
+from public.employees e where e.employee_number = 'RR-02404'
+and not exists (select 1 from public.employee_lifecycle_events x where x.employee_id = e.id and x.event_type = 'LOCATION_TRANSFER' and x.effective_date = date '2026-10-06');
+
+insert into public.employee_lifecycle_events(employee_id, event_type, effective_date, previous_data, new_data, notes)
+select e.id, 'DEPARTMENT_TRANSFER', date '2026-10-07', jsonb_build_object('department', 'Operations', 'position', 'Operations Analyst'),
+       jsonb_build_object('department', 'Human Resources', 'position', 'HR Assistant'), 'Fictional demo department transfer'
+from public.employees e where e.employee_number = 'RR-02415'
+and not exists (select 1 from public.employee_lifecycle_events x where x.employee_id = e.id and x.event_type = 'DEPARTMENT_TRANSFER' and x.effective_date = date '2026-10-07');
+
+insert into public.employee_lifecycle_events(employee_id, event_type, effective_date, previous_data, new_data, notes)
+select e.id, 'CLIENT_REASSIGNMENT', date '2026-10-06', jsonb_build_object('client', 'Northstar Retail'),
+       jsonb_build_object('client', 'Cedarline Logistics'), 'Fictional demo client reassignment'
+from public.employees e where e.employee_number = 'RR-02405'
+and not exists (select 1 from public.employee_lifecycle_events x where x.employee_id = e.id and x.event_type = 'CLIENT_REASSIGNMENT' and x.effective_date = date '2026-10-06');
+
+insert into public.employee_lifecycle_events(employee_id, event_type, effective_date, previous_data, new_data, notes)
+select e.id, 'SEPARATION', date '2026-10-05', jsonb_build_object('employment_status', 'Active'),
+       jsonb_build_object('employment_status', 'Separated', 'separation_type', 'End of Contract'), 'Fictional demo separation; no confidential note'
+from public.employees e where e.employee_number = 'RR-02422'
+and not exists (select 1 from public.employee_lifecycle_events x where x.employee_id = e.id and x.event_type = 'SEPARATION' and x.effective_date = date '2026-10-05');
 
 insert into public.resources(resource_code, resource_type_id, description, location_id, status)
 select case when n <= 16 then 'TG-WS-' || lpad(n::text, 2, '0')
@@ -127,3 +197,9 @@ from generate_series(1, 14) as n
 join public.resources r on r.resource_code = 'TG-WS-' || lpad(n::text, 2, '0')
 join public.employees e on e.employee_number = 'RR-' || lpad((2400 + n)::text, 5, '0')
 where not exists (select 1 from public.resource_assignments a where a.resource_id = r.id and a.released_at is null);
+
+update public.resources set status = 'ASSIGNED'::public.resource_status where resource_code = 'TG-WS-15';
+insert into public.resource_assignments(resource_id, employee_id, assigned_at, notes)
+select r.id, e.id, timestamptz '2026-10-07 09:00:00+08', 'Fictional October report fixture'
+from public.resources r, public.employees e where r.resource_code = 'TG-WS-15' and e.employee_number = 'RR-02421'
+and not exists (select 1 from public.resource_assignments a where a.resource_id = r.id and a.employee_id = e.id and a.assigned_at = timestamptz '2026-10-07 09:00:00+08');
