@@ -13,7 +13,9 @@
 | 2026-10-07 | Local Supabase identity/RLS check | Passed: Millmar Agustin profile is active with `ADMIN`; the issued Supabase token can read the profile through RLS |
 | 2026-10-07 | Public account creation | Passed: anonymous Auth signup was rejected by the database trigger; database still has one Auth user and one active profile |
 | 2026-10-07 | Authenticated HR route smoke | Passed: dashboard, employees, lifecycle, 201 files, resources, reports, organization, and settings return 200 with authenticated session; responses are `no-store` |
-| 2026-10-07 | Vercel Production smoke | Pending deployment of this auth change |
+| 2026-10-07 | Vercel Production auth smoke | Passed: production root and protected redirects, generic wrong-password response, valid Millmar login, Secure/HttpOnly/SameSite=Lax cookie, session token/profile/RLS access, signed-in dashboard and HR routes, signed-in redirect, logout and post-logout protection |
+| 2026-10-07 | Vercel signup and identity check | Passed: `/signup` redirects to `/signin`; public Supabase Auth signup is rejected; production dashboard renders Millmar Agustin and Sign out; database retains one Auth user and one active profile |
+| 2026-10-07 | Vercel deployment | Ready at `https://rrf-hr-nexus.vercel.app` from commit `b1f1cb9` |
 
 The full `npm audit` has five high findings in a development-only ESLint dependency chain (`eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch` → `braces`). `npm audit --omit=dev` reports no production vulnerabilities. No breaking framework downgrade or unreviewed fork override was applied.
 
@@ -34,4 +36,4 @@ The full `npm audit` has five high findings in a development-only ESLint depende
 | Session persistence, refresh, and logout | Passed locally | HTTP-only cookie survives multiple protected requests; signout expires it |
 | Protected route middleware | Passed locally | Unauthenticated `/`, `/dashboard`, `/employees` redirect to `/signin`; all listed HR pages allow active session only |
 | Authenticated HR CRUD workflows | Not re-tested in this auth-only task | Existing Supabase-backed workflows are preserved; this task verified authenticated profile/RLS access and page delivery |
-| Desktop/mobile browser visual QA | Not performed | No design changes were made; tests used HTTP workflows |
+| Desktop/mobile browser visual QA | Not performed | No design changes were made; tests used local and production HTTP workflows |
