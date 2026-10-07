@@ -40,4 +40,4 @@ Copy `.env.example` to `.env.local`. The public Supabase URL and publishable key
 
 ## Deployment status
 
-Production and Development Vercel environments have the public Supabase connection values. Production also has the server-only bootstrap secret. Preview variables could not be assigned because the Vercel project is not linked to a Git repository/branch. The latest local changes still need final validation, commit, push, and deployment. Hosted Supabase Auth URL configuration and the initial Admin are still pending; no real personnel data is present.
+Production, Preview, and Development Vercel environments have the public Supabase connection values. Production also has the server-only bootstrap secret. GitHub is connected to Vercel, and the application is deployed at <https://rrf-hr-nexus.vercel.app>. Hosted Supabase Auth URL configuration and the initial Admin email are still pending; no real personnel data is present.
