@@ -20,7 +20,7 @@ Atomic employee, lifecycle, resource, and assignment changes use guarded databas
 
 ## Deployments and configuration
 
-The connected Supabase project has the nine ordered repository migrations applied and fictional seed data. It contains one active Admin profile and a corresponding confirmed internal Auth identity. Public signup is blocked by a database trigger. The connected Vercel project has the Supabase URL/publishable key and server-only HR credentials in Production, Preview, and Development. GitHub is connected for branch deployments. The production URL is `https://rrf-hr-nexus.vercel.app`.
+The connected Supabase project has the nine ordered repository migrations applied, master data, and one active Admin profile with a corresponding confirmed internal Auth identity. The fictional transactional rows previously inserted from `supabase/seed.sql` were removed after confirming that all employees and related records were development fixtures. The production project now has no employee, lifecycle, client assignment, employee document, resource, or resource assignment rows. Public signup is blocked by a database trigger. The connected Vercel project has the Supabase URL/publishable key and server-only HR credentials in Production, Preview, and Development. GitHub is connected for branch deployments. The production URL is `https://rrf-hr-nexus.vercel.app`.
 
 ## Verified limits
 

@@ -22,7 +22,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ n
       if (result.data?.is_active) profile = { full_name: result.data.full_name, role: result.data.role };
     }
   } catch {
-    // Supabase configuration is optional while the fictional local demo is in use.
+    // The route guard remains responsible for rejecting requests when Supabase is unavailable.
   }
   return <AppShell profile={profile} notice={notice} authConfigured={authConfigured} />;
 }

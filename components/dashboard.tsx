@@ -47,7 +47,7 @@ export function Dashboard({ name }: { name: string }) {
   });
   const totalRequired = complianceRows.reduce((count, row) => count + row.states.length, 0);
   const completeRequired = complianceRows.reduce((count, row) => count + row.states.filter((state) => state === "complete").length, 0);
-  const compliance = totalRequired ? Math.round((completeRequired / totalRequired) * 100) : 100;
+  const compliance = currentEmployees.length ? (totalRequired ? Math.round((completeRequired / totalRequired) * 100) : 100) : 0;
   const missingDocs = complianceRows.reduce((count, row) => count + row.states.filter((state) => state === "missing").length, 0);
   const expiringDocs = complianceRows.reduce((count, row) => count + row.states.filter((state) => state === "expiring").length, 0);
   const expiredDocs = complianceRows.reduce((count, row) => count + row.states.filter((state) => state === "expired").length, 0);

@@ -27,3 +27,10 @@
 - Added workbook sheets for summary, workforce snapshot, new hires, lifecycle movements, client assignments, 201 compliance, resources, and people events.
 - Documented Manila date boundaries and the historical snapshot limits of the existing document/resource schema.
 - Tested the fictional October 2026 report locally and in production, then deployed commit `3934f54` to `https://rrf-hr-nexus.vercel.app`.
+
+## 2026-10-07 — HR data consistency cleanup
+
+- Confirmed the report and main HR workspace both query the linked Supabase database; no runtime localStorage, static employee fixture, or empty-database demo fallback was present.
+- Identified that the source-of-truth itself still contained the fictional seed set. Removed its 22 employees and related lifecycle, client assignment, document, resource, resource assignment, and fixture audit rows, plus two private fixture files. Preserved schema, migrations, master data, Millmar's Admin profile, and access/profile audit history.
+- Made empty compliance report/dashboard completion show 0% when there are no employees instead of implying that an empty population is fully complete.
+- Clarified in docs that fictional data is explicit development seeding only; it is never created on app start or during Vercel builds.

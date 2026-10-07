@@ -6,7 +6,7 @@
 
 The application uses Supabase PostgreSQL as its authoritative data source. The browser-local demo repository has been removed. Employee CRUD and archive, lifecycle changes, client and resource assignment history, private document upload and signed access, reports, dashboard metrics, organization structure, access requests, and settings are wired to the database and protected by RLS and guarded RPCs.
 
-Supabase migrations and fictional seed records are applied to the connected project. The existing sign-in page now validates the single HR Administrator credential on the server and issues an HTTP-only, 10-hour Supabase session, preserving the existing database RLS access. Signup is disabled. The active administrator profile is Millmar Agustin.
+The connected production Supabase project contains the HR schema, master data, and the Millmar Agustin administrator profile. It starts with no employee, lifecycle, client assignment, document, resource, or resource-assignment demo records. Fictional seed data is available only through explicit development seeding; application startup and Vercel builds never seed records. The existing sign-in page validates the single HR Administrator credential on the server and issues an HTTP-only, 10-hour Supabase session, preserving database RLS access. Signup is disabled.
 
 ## Stack
 
@@ -24,7 +24,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`. Use the fictional SQL seed only in development/demo workspaces. Run `npm run lint`, `npm run typecheck`, and `npm run build` for code checks.
+Open `http://localhost:3000`. Apply `supabase/seed.sql` manually only when you intentionally want fictional data in a development/demo workspace. It is not run by the app or deployment. Run `npm run lint`, `npm run typecheck`, and `npm run build` for code checks.
 
 ## Environment
 

@@ -23,7 +23,9 @@ The full `npm audit` has five high findings from one development-only ESLint dep
 
 - Sixteen HR application tables and `access_requests` exist in the connected project; RLS is enabled on public application tables.
 - The project migration ledger matches all nine ordered migrations in `supabase/migrations/`.
-- Fictional demo records remain in Supabase. The current administrator is a separate internal account; no real employee information or binary document was added.
+- The connected production project now has zero employee, lifecycle event, client assignment, employee document, resource, and resource assignment rows. Its previous fictional seed fixtures were confirmed against `supabase/seed.sql` and removed; admin/access audit entries and master data remain.
+- No HR runtime path uses browser localStorage, sessionStorage, IndexedDB, static employee arrays, or an empty-database demo fallback. Workspace screens use `loadWorkspace()` and the monthly preview/XLSX/PDF use `generateMonthlyReport()`, each querying the same Supabase project.
+- `supabase/seed.sql` and `npm run seed:monthly-report-fixtures` are explicit development-only operations and are not invoked by app startup, `npm run build`, or Vercel deployment.
 - `employee-documents` is a private bucket. Policies require an active profile and appropriate HR role.
 - The administrator profile is active (`Millmar Agustin`, `ADMIN`) and associated with one confirmed internal Supabase Auth identity. No public signup workflow is exposed.
 - Supabase security advisor reports guarded authenticated `SECURITY DEFINER` RPCs as WARN findings; the functions perform explicit role checks and use a fixed search path.
@@ -40,7 +42,9 @@ The full `npm audit` has five high findings from one development-only ESLint dep
 | Compare periods | Headcount and employment types are reconstructed from hire dates/lifecycle events; current documents and resource inventory are excluded from historical comparison |
 | Verify privacy | Export does not include private file paths, storage URLs, document notes, or free-text separation notes |
 
-### Monthly report execution results (2026-10-07)
+### Monthly report fixture execution results (2026-10-07; prior to demo cleanup)
+
+The following fixture-based execution results document the earlier report test only. Those fictional Supabase rows and private files were subsequently removed as recorded below; they are not the current production state.
 
 | Check | Result |
 |---|---|
@@ -55,7 +59,22 @@ The full `npm audit` has five high findings from one development-only ESLint dep
 | Browser viewport sweep | Not completed: Playwright Chromium could not launch because the workstation lacks `libnspr4.so`; installing system browser dependencies requires interactive sudo authentication. Responsive rules were reviewed at the requested CSS breakpoints. |
 | Vercel production report smoke | Passed at `https://rrf-hr-nexus.vercel.app`: root/protected routes redirect when signed out; Millmar login works; root and `/signin` route to dashboard after login; dashboard, employees, monthly report, resources, and settings return 200; October preview matches all fixture counts; Excel and PDF download successfully; sign out clears cookies and protected routes redirect again. |
 
-The fictional October report fixtures are reproducible through `supabase/seed.sql` and `npm run seed:monthly-report-fixtures`. They include an October hire (Leah Mercado), existing October promotion (Maria Santos) and regularization (Angela Reyes), location and department transfers, a client reassignment, a separation (Ethan Moreno), birthdays, private uploaded NBI/medical document examples, and a workstation assignment. Fixtures use fictional data and are safe to re-run.
+The fictional October report fixtures are reproducible only when a developer intentionally applies `supabase/seed.sql` in a development workspace and runs `npm run seed:monthly-report-fixtures`. They include an October hire, lifecycle examples, client movement, document examples, and a workstation assignment. Do not apply these fixtures to production.
+
+### Production source-of-truth and empty-state verification (2026-10-07)
+
+| Check | Result |
+|---|---|
+| Supabase transactional row inventory before cleanup | Found 22 fictional employees (`RR-02401`–`RR-02422`, all `@rrfmg.example`), 28 lifecycle events, 23 client assignments, 2 employee documents, 24 seed resources, 15 resource assignment rows, and fixture-only audit entries. The set matched the repository seed SQL. |
+| Demo cleanup | Removed confirmed fictional transactional rows and two private Storage fixture objects. Preserved all schema, migrations, master/reference data, active Millmar Admin profile, and access/profile audit entries. |
+| Supabase transactional row inventory after cleanup | Passed: employees, lifecycle events, client assignments, employee documents, resources, and resource assignments all count 0. |
+| Runtime data-source scan | Passed: no `localStorage`, `sessionStorage`, IndexedDB, hardcoded employee lists, static report records, or empty-database fallback in app/runtime code. Dashboard/screens load through `loadWorkspace()`; preview and both exports share `generateMonthlyReport()`. |
+| Local empty October report | Passed: workforce, every movement category, assignment activity, compliance counts/completion, document expiry, and resource activity are 0; former seed names are absent. |
+| Local empty-state Excel/PDF | Passed: valid XLSX with all 8 worksheets; valid six-page PDF. Neither export contains former seed names. |
+| Production empty October report and exports | Passed against production after deleting the temporary test record: preview counts are 0; downloadable XLSX/PDF contain no former seed names. |
+| One employee and one promotion | Passed using the same authenticated `save_employee` and `record_lifecycle_event` RPCs invoked by the workspace UI: one employee and one promotion appeared in Supabase, the production report, and both exports; current position changed to Operations Coordinator. The temporary test row, event, assignment, and audit entries were then removed. |
+| Cross-screen data consistency | Passed: authenticated dashboard, employee directory, lifecycle, 201 files, resources, and monthly report routes all load; the shared workspace query saw one test employee during the test and zero after cleanup, matching the report. |
+| UI/browser interaction | Not run in a real browser in this environment. Route delivery, authenticated database/RPC workflows, report preview endpoints, and exports were exercised over HTTP. |
 
 ## Scope and remaining verification
 

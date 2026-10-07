@@ -175,7 +175,7 @@ export async function generateMonthlyReport(month: number, year: number): Promis
       return { employee: employee.name, employeeNumber: employee.number, completion, missing, expiring, expired, status };
     });
     const attention = complianceRows.filter((row) => row.status === "Needs Attention");
-    const compliance = { required: workforceEmployees.length, compliant: complianceRows.filter((r) => r.status === "Complete").length, withMissing: attention.filter((r) => r.missing.length > 0).length, withExpiring: attention.filter((r) => r.expiring.length > 0).length, withExpired: attention.filter((r) => r.expired.length > 0).length, completion: complianceRows.length ? Math.round(complianceRows.reduce((sum, row) => sum + row.completion, 0) / complianceRows.length) : 100, historical: false, rows: attention };
+    const compliance = { required: workforceEmployees.length, compliant: complianceRows.filter((r) => r.status === "Complete").length, withMissing: attention.filter((r) => r.missing.length > 0).length, withExpiring: attention.filter((r) => r.expiring.length > 0).length, withExpired: attention.filter((r) => r.expired.length > 0).length, completion: complianceRows.length ? Math.round(complianceRows.reduce((sum, row) => sum + row.completion, 0) / complianceRows.length) : 0, historical: false, rows: attention };
 
     const documentNames = new Map(((documentTypeResult.data ?? []) as AnyRow[]).map((d) => [d.id, d.name]));
     const expiryRows = docs.flatMap((doc) => {
