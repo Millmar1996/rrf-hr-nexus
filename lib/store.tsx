@@ -20,6 +20,13 @@ type Store = WorkspaceData & {
 const blank: WorkspaceData = { employees: [], events: [], resources: [], references: emptyReferences, documents: [], clientAssignments: [], resourceAssignments: [], audit: [], accessRequests: [], profiles: [], error: null };
 const Context = createContext<Store | null>(null);
 
+async function requireCurrentUserId() {
+  const response = await fetch("/api/auth/token", { cache: "no-store" });
+  const session = await response.json() as { user_id?: string };
+  if (!response.ok || !session.user_id) throw new Error("Sign in to save HR records.");
+  return session.user_id;
+}
+
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<WorkspaceData>(blank);
   const [ready, setReady] = useState(false);
@@ -41,8 +48,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     ...data, ready, refresh, clearError: () => setData((old) => ({ ...old, error: null })),
     saveEmployee: async (employee) => run(async () => {
       const client = createClient();
-      const { data: auth, error: authError } = await client.auth.getUser();
-      if (authError || !auth.user) throw authError ?? new Error("Sign in to save employee records.");
+      await requireCurrentUserId();
       const department = data.references.departments.find((item) => item.name === employee.department);
       const position = data.references.positions.find((item) => item.name === employee.position && (!item.department_id || item.department_id === department?.id));
       const type = data.references.employmentTypes.find((item) => item.name === employee.type);
@@ -114,12 +120,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }),
     uploadDocument: async (employeeId, documentTypeId, file, issueDate, expiryDate, notes) => run(async () => {
       const client = createClient();
-      const { data: auth } = await client.auth.getUser();
-      if (!auth.user) throw new Error("Sign in to upload employee documents.");
+      const userId = await requireCurrentUserId();
       const path = `${employeeId}/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
       const { error: uploadError } = await client.storage.from("employee-documents").upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
       if (uploadError) throw uploadError;
-      const { error } = await client.from("employee_documents").insert({ employee_id: employeeId, document_type_id: documentTypeId, file_path: path, original_filename: file.name, mime_type: file.type || null, file_size: file.size, issue_date: issueDate || null, expiry_date: expiryDate || null, notes: notes || null, uploaded_by: auth.user.id });
+      const { error } = await client.from("employee_documents").insert({ employee_id: employeeId, document_type_id: documentTypeId, file_path: path, original_filename: file.name, mime_type: file.type || null, file_size: file.size, issue_date: issueDate || null, expiry_date: expiryDate || null, notes: notes || null, uploaded_by: userId });
       if (error) { await client.storage.from("employee-documents").remove([path]); throw error; }
     }),
     removeDocument: async (id) => run(async () => {

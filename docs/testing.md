@@ -1,36 +1,37 @@
 # Testing log
 
-## Automated checks
+## Checks run for single-account sign-in
 
 | Date | Check | Result |
 |---|---|---|
-| 2026-10-07 | `npm run typecheck` | Passed after final auth, resource, settings and report changes |
-| 2026-10-07 | `npm run lint` | Passed with no warnings after resource search was wired |
+| 2026-10-07 | `npm run typecheck` | Passed |
+| 2026-10-07 | `npm run lint` | Passed with no warnings |
 | 2026-10-07 | `npm run build` | Passed; Next.js production build completed |
 | 2026-10-07 | `git diff --check` | Passed |
 | 2026-10-07 | `npm audit --omit=dev` | Passed: 0 production dependency vulnerabilities |
-| 2026-10-07 | Production HTTP smoke | `/signin` and `/signup` returned 200; unauthenticated dashboard, employee, lifecycle, 201 files, resources, reports, and settings returned 307 to `/signin?notice=signin_required` |
-| 2026-10-07 | Vercel production deploy | Ready and aliased to `https://rrf-hr-nexus.vercel.app` |
+| 2026-10-07 | Local production-mode HTTP auth smoke | Passed: root/protected redirects; generic incorrect-credential response; valid login; `Secure`, `HttpOnly`, `SameSite=Lax` cookie; protected route access; signed-in `/signin` redirect; disabled signup; logout cookie clearing and post-logout redirect |
+| 2026-10-07 | Local Supabase identity/RLS check | Passed: Millmar Agustin profile is active with `ADMIN`; the issued Supabase token can read the profile through RLS |
+| 2026-10-07 | Public account creation | Passed: anonymous Auth signup was rejected by the database trigger; database still has one Auth user and one active profile |
+| 2026-10-07 | Authenticated HR route smoke | Passed: dashboard, employees, lifecycle, 201 files, resources, reports, organization, and settings return 200 with authenticated session; responses are `no-store` |
+| 2026-10-07 | Vercel Production smoke | Pending deployment of this auth change |
 
-The full `npm audit` still reports five high findings through development-only `eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch` → `braces`. GitHub's current advisory says all published `braces` releases through 3.0.3 are affected and no patched version is available; `npm audit fix` did not resolve it. No breaking framework downgrade or unreviewed fork override was applied.
+The full `npm audit` has five high findings in a development-only ESLint dependency chain (`eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch` → `braces`). `npm audit --omit=dev` reports no production vulnerabilities. No breaking framework downgrade or unreviewed fork override was applied.
 
 ## Supabase project checks
 
-- Sixteen HR application tables and `access_requests` exist in the connected project; RLS is enabled on all public application tables.
-- The project migration ledger matches all eight ordered migrations in `supabase/migrations/`.
-- Fictional seed state: 5 departments, 11 positions, 4 employment types, 4 employment statuses, 5 clients, 2 locations, 20 employees, 20 client assignments, 22 lifecycle events, 24 resources, and 14 resource assignments. No real personnel records or binary files were added.
-- `employee-documents` is a private bucket. Policies require an active profile for read and HR write permissions for upload/update/delete.
-- Supabase security advisor after migrations: guarded authenticated `SECURITY DEFINER` RPCs are WARN findings; no unguarded data exposure finding was identified. The performance advisor's duplicate access/audit select policies and reviewed-by FK index were fixed in the last migration; unused indexes remain informational until query statistics accumulate.
-- The Auth URL Configuration and a first admin profile are not yet configured. Therefore sign-up, sign-in, role enforcement with a real user, and file workflows cannot yet be run end-to-end against a real session.
+- Sixteen HR application tables and `access_requests` exist in the connected project; RLS is enabled on public application tables.
+- The project migration ledger matches all nine ordered migrations in `supabase/migrations/`.
+- Fictional demo records remain in Supabase. The current administrator is a separate internal account; no real employee information or binary document was added.
+- `employee-documents` is a private bucket. Policies require an active profile and appropriate HR role.
+- The administrator profile is active (`Millmar Agustin`, `ADMIN`) and associated with one confirmed internal Supabase Auth identity. No public signup workflow is exposed.
+- Supabase security advisor reports guarded authenticated `SECURITY DEFINER` RPCs as WARN findings; the functions perform explicit role checks and use a fixed search path.
 
-## Application workflow verification
+## Scope and remaining verification
 
-| Workflow | Status | Evidence / limitation |
+| Area | Status | Evidence / limit |
 |---|---|---|
-| Employee CRUD, archive, lifecycle, assignments, resources, private document storage, dashboard, reports, settings | Implemented in Supabase-backed store and guarded RPC/RLS paths | Requires a provisioned signed-in admin for live UI interaction |
-| Auth sign-up/sign-in/sign-out/session guard | Implemented | Hosted redirect allow-list and administrator identity are still pending |
-| Workforce changes month/year/custom range | Implemented from lifecycle event records | Type/build checks pending final run |
-| Desktop/mobile browser QA | Not completed | No browser session was available in connected account tools |
-| Production primary workflow smoke test | Partially completed | Public auth pages and protected-route redirects pass. Sign-in and authenticated HR workflows await the first active Admin account. |
-
-Do not describe unrun workflows as production-verified. Repeat browser and cross-feature scenarios after the first admin is provisioned.
+| Login UI and server-side credential validation | Passed locally | Generic error for incorrect credentials; no credentials are embedded in frontend code |
+| Session persistence, refresh, and logout | Passed locally | HTTP-only cookie survives multiple protected requests; signout expires it |
+| Protected route middleware | Passed locally | Unauthenticated `/`, `/dashboard`, `/employees` redirect to `/signin`; all listed HR pages allow active session only |
+| Authenticated HR CRUD workflows | Not re-tested in this auth-only task | Existing Supabase-backed workflows are preserved; this task verified authenticated profile/RLS access and page delivery |
+| Desktop/mobile browser visual QA | Not performed | No design changes were made; tests used HTTP workflows |

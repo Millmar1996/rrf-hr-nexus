@@ -1,12 +1,12 @@
 # Database schema
 
-Schema matches the linked Supabase project after migrations through `20261007013434`.
+Schema matches the linked Supabase project after migrations through `20261007020722`.
 
 ## Public tables
 
 | Area | Tables | Purpose |
 |---|---|---|
-| Identity and access | `profiles`, `access_requests` | Active user role/branch and signup approval lifecycle |
+| Identity and access | `profiles`, `access_requests` | Active user role/branch; access request table remains from the previous multi-user workflow |
 | Organization/master data | `departments`, `positions`, `employment_types`, `employment_statuses`, `clients`, `locations` | Reusable employee and client references |
 | Employees | `employees` | Current employee attributes, supervisor relationship, archive state and regularization date |
 | Lifecycle | `employee_lifecycle_events` | Append-only effective-dated events with previous/new JSON, actor and timestamp |
@@ -17,7 +17,7 @@ Schema matches the linked Supabase project after migrations through `20261007013
 
 ## Private schema and storage
 
-`private` contains authorization helpers (`has_active_profile`, `has_role`, `can_manage_hr_records`), audit triggers, Auth signup capture, and `bootstrap_configuration`. The private `employee-documents` Storage bucket stores employee document binaries; the bucket is not public. Application rows store object paths and metadata, not public URLs.
+`private` contains authorization helpers (`has_active_profile`, `has_role`, `can_manage_hr_records`), audit triggers, Auth signup capture, and the original `bootstrap_configuration`. The bootstrap table/RPC are not used by the current single-account login. The private `employee-documents` Storage bucket stores employee document binaries; the bucket is not public. Application rows store object paths and metadata, not public URLs.
 
 ## Relationships and constraints
 

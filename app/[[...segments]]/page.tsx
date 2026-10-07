@@ -5,7 +5,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ n
   let profile: { full_name: string; role: string } | null = null;
   const authConfigured = Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+    (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) &&
+    process.env.HR_ADMIN_USERNAME && process.env.HR_ADMIN_PASSWORD,
   );
   const query = await searchParams;
   const notice = Array.isArray(query.notice) ? query.notice[0] : query.notice;

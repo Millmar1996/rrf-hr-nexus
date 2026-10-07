@@ -2,6 +2,8 @@
 
 Profiles use the `ADMIN`, `HR_MANAGER`, `HR_STAFF`, and `VIEWER` enum. A confirmed Auth identity without an active profile cannot read workforce data or enter protected HR routes. Signup metadata never grants a role.
 
+The current office login exposes one account: Millmar Agustin as `ADMIN`. Public account creation is disabled. Other roles remain enforced by existing RLS and RPC rules but cannot be added through the current sign-in UI.
+
 | Role | Reads | Writes |
 |---|---|---|
 | ADMIN | All workspace data, private document metadata/files, audit, access requests and profiles | All HR records, settings, profiles/roles, access approvals, documents and resources |

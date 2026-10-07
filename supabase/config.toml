@@ -23,9 +23,9 @@ file_size_limit = "20MiB"
 enabled = true
 site_url = "http://localhost:3000"
 additional_redirect_urls = ["http://localhost:3000/auth/confirm", "http://localhost:3000/auth/update-password", "https://rrf-hr-nexus.vercel.app/auth/confirm", "https://rrf-hr-nexus.vercel.app/auth/update-password"]
-enable_signup = true
+enable_signup = false
 
 [auth.email]
-enable_signup = true
+enable_signup = false
 double_confirm_changes = true
-enable_confirmations = true
+enable_confirmations = false

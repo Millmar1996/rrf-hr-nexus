@@ -6,7 +6,7 @@
 
 The application uses Supabase PostgreSQL as its authoritative data source. The browser-local demo repository has been removed. Employee CRUD and archive, lifecycle changes, client and resource assignment history, private document upload and signed access, reports, dashboard metrics, organization structure, access requests, and settings are wired to the database and protected by RLS and guarded RPCs.
 
-Supabase migrations and fictional seed records are applied to the connected project. Supabase Auth flows are implemented, but hosted Auth URL settings and the initial administrator email still need to be bound. Until an active Admin is provisioned, no user can enter HR screens. See `docs/ADMIN-PROVISIONING.md` for the one remaining identity input and flow.
+Supabase migrations and fictional seed records are applied to the connected project. The existing sign-in page now validates the single HR Administrator credential on the server and issues an HTTP-only, 10-hour Supabase session, preserving the existing database RLS access. Signup is disabled. The active administrator profile is Millmar Agustin.
 
 ## Stack
 
@@ -28,7 +28,7 @@ Open `http://localhost:3000`. Use the fictional SQL seed only in development/dem
 
 ## Environment
 
-Copy `.env.example` to `.env.local`. The public Supabase URL and publishable key are needed for client integration. `NEXUS_BOOTSTRAP_ADMIN_EMAIL` and `NEXUS_BOOTSTRAP_SECRET` are server-only first-admin bootstrap settings; never put the secret in a `NEXT_PUBLIC_` variable. No service-role key is required. Values remain out of Git.
+Copy `.env.example` to `.env.local`. Configure the Supabase URL/publishable key and `HR_ADMIN_USERNAME` / `HR_ADMIN_PASSWORD`. The HR credentials are server-only and must never use a `NEXT_PUBLIC_` prefix. No service-role key is used. `.env.local` is ignored by Git.
 
 ## Supabase artifacts
 
@@ -40,4 +40,4 @@ Copy `.env.example` to `.env.local`. The public Supabase URL and publishable key
 
 ## Deployment status
 
-Production, Preview, and Development Vercel environments have the public Supabase connection values. Production also has the server-only bootstrap secret. GitHub is connected to Vercel, and the application is deployed at <https://rrf-hr-nexus.vercel.app>. Hosted Supabase Auth URL configuration and the initial Admin email are still pending; no real personnel data is present.
+Production, Preview, and Development Vercel environments have the Supabase connection values and server-only HR credentials. GitHub is connected to Vercel, and the application is deployed at <https://rrf-hr-nexus.vercel.app>. The internal Supabase Auth identity exists only to preserve existing RLS-protected HR data access; the login form has no email, signup, or recovery workflow. No real personnel data is present.

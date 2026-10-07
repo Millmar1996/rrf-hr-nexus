@@ -10,6 +10,7 @@ import { AuthPage } from "./auth-pages";
 import { EmployeesPage, EmployeeFormPage, EmployeeProfilePage } from "./employees";
 import { LifecyclePage, FilesPage, ResourcesPage, ReportsPage, SettingsPage, WorkforceChangesPage, OrganizationPage } from "./modules";
 import { useStore } from "@/lib/store";
+import { clearAccessToken } from "@/lib/supabase/client";
 
 const navGroups = [
   { label: "", links: [{ label: "Overview", href: "/dashboard", icon: LayoutDashboard }, { label: "Employees", href: "/employees", icon: Users }] },
@@ -23,8 +24,8 @@ const navGroups = [
 type WorkspaceProfile = { full_name: string; role: string } | null;
 
 function Sidebar({ active, onNavigate, profile }: { active: string; onNavigate: () => void; profile: WorkspaceProfile }) {
-  const name = profile?.full_name || "Fictional demo user";
-  const role = profile?.role.replaceAll("_", " ") || "Demo workspace";
+  const name = profile?.full_name || "Millmar Agustin";
+  const role = profile?.role === "ADMIN" ? "HR Administrator" : profile?.role.replaceAll("_", " ") || "HR Administrator";
   return <aside className="sidebar">
     <Link className="brand" href="/dashboard" onClick={onNavigate}><span className="brand-name"><b>RRF HR</b><em>Nexus</em></span><span className="brand-branch">Tuguegarao Branch</span></Link>
     <button className="sidebar-search" onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }))}><Search size={16}/><span>Search anything</span><kbd>Ctrl K</kbd></button>
@@ -32,7 +33,7 @@ function Sidebar({ active, onNavigate, profile }: { active: string; onNavigate: 
       const selected = active === item.href || (item.href === "/employees" && active.startsWith("/employees")) || (item.href === "/workforce/assignments" && active === "/workforce/client-assignments");
       return <Link onClick={onNavigate} key={item.href} href={item.href} className={"nav-link" + (selected ? " selected" : "")} aria-current={selected ? "page" : undefined}><item.icon size={17} strokeWidth={1.8}/><span>{item.label}</span></Link>;
     })}</div>)}</nav>
-    <div className="sidebar-bottom"><Link className="nav-link help-link" href="/settings"><CircleHelp size={17}/><span>Help & support</span></Link><div className="user-profile"><span className="avatar">{name.slice(0, 1).toUpperCase()}</span><span className="user-copy"><b>{name}</b><small>{role}</small></span><form action="/auth/signout" method="post"><button className="icon-button tiny" aria-label="Sign out" title="Sign out"><LogOut size={15}/></button></form></div></div>
+    <div className="sidebar-bottom"><Link className="nav-link help-link" href="/settings"><CircleHelp size={17}/><span>Help & support</span></Link><div className="user-profile"><span className="avatar">{name.slice(0, 1).toUpperCase()}</span><span className="user-copy"><b>{name}</b><small>{role}</small></span><form action="/auth/signout" method="post" onSubmit={() => clearAccessToken()}><button className="icon-button tiny" aria-label="Sign out" title="Sign out"><LogOut size={15}/></button></form></div></div>
   </aside>;
 }
 
@@ -65,7 +66,7 @@ export function AppShell({ profile, notice, authConfigured }: { profile: Workspa
     return () => window.removeEventListener("keydown", onShortcut);
   }, []);
 
-  if (["/signin","/signup","/auth/update-password"].includes(active)) return <AuthPage mode={active === "/signup" ? "signup" : active === "/auth/update-password" ? "update" : "signin"} notice={notice} authConfigured={authConfigured}/>;
+  if (active === "/signin") return <AuthPage notice={notice} authConfigured={authConfigured}/>;
 
   let page;
   if (active === "/dashboard") page = <Dashboard name={profile?.full_name || "HR team"} />;
@@ -91,7 +92,7 @@ export function AppShell({ profile, notice, authConfigured }: { profile: Workspa
         <button className="icon-button menu-toggle" aria-label={drawer ? "Close navigation" : "Open navigation"} onClick={() => setDrawer(!drawer)}>{drawer ? <X size={19}/> : <Menu size={19}/>}</button>
         <div className="breadcrumbs" aria-label="Current page">{pageTitle}</div>
         <button className="global-search" onClick={() => setCommandOpen(true)} aria-label="Search employees, records and actions"><Search size={17}/><span>Search employees, records, actions…</span><kbd>Ctrl K</kbd></button>
-        <div className="top-actions"><span className="branch-label">Tuguegarao</span><Link className="icon-button notification-btn" href="/dashboard" aria-label="Open workforce overview"><Bell size={18}/></Link><span className="top-avatar" aria-label={profile?.full_name || "Fictional demo user"}>{(profile?.full_name || "D").slice(0, 1).toUpperCase()}</span></div>
+        <div className="top-actions"><span className="branch-label">Tuguegarao</span><Link className="icon-button notification-btn" href="/dashboard" aria-label="Open workforce overview"><Bell size={18}/></Link><span className="top-avatar" aria-label={profile?.full_name || "Millmar Agustin"}>{(profile?.full_name || "M").slice(0, 1).toUpperCase()}</span></div>
       </header>
       <main className="page-content">{error && <div className="inline-error" role="alert"><span>{error}</span><button className="text-link" onClick={() => void refresh()}>Retry</button></div>}{!ready ? <div className="empty-state database-state" role="status"><span className="loading-spinner"/><b>Loading HR records</b><span>Connecting to the secure workspace…</span></div> : page}</main>
       <footer className="app-footer"><span>RRF HR Nexus</span><span>Stage 1 · Tuguegarao</span></footer>

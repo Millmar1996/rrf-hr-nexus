@@ -14,8 +14,9 @@
 - Applied workflow, audit, bootstrap, and permission-alignment migrations to the connected project; synced migration filenames and generated schema types.
 - Configured Supabase URL/publishable-key environment values in Vercel Production and Development, plus a server-only bootstrap secret in Production.
 
-## Remaining provider work
+## 2026-10-07 — Single-account sign-in and deployment
 
-- Hosted Supabase Auth URL settings require a signed-in Supabase dashboard or Management API session, which was not available in this environment.
-- GitHub is now linked to the Vercel project and Preview has the public Supabase connection variables.
-- The first Admin email is not yet supplied, and live authenticated production QA cannot run until that account is active.
+- Wired the existing sign-in design to server-side username/password validation using `HR_ADMIN_USERNAME` and `HR_ADMIN_PASSWORD`; removed the signup link and disabled the public signup route.
+- Kept Supabase Auth as the session identity needed by the existing RLS-protected HR tables, Storage, and RPCs. Provisioned the one internal Millmar Agustin `ADMIN` identity without a mailbox or email confirmation step.
+- Added an HTTP-only, `SameSite=Lax`, production `Secure` 10-hour session cookie, server token bridge for browser RLS requests, one common route guard, no-store protected responses, and logout cache clearing.
+- Configured local ignored `.env.local` and Vercel Production, Preview, and Development environment variables. Production, authenticated route, session, and logout smoke results are recorded in `docs/testing.md`.
