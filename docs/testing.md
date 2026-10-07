@@ -53,6 +53,7 @@ The full `npm audit` has five high findings from one development-only ESLint dep
 | PDF | Passed: non-empty PDF structure, expected report title and brand text, 9 pages with page numbering |
 | Private document access | Passed: signed URL for fictional fixture document returned the private PDF successfully (HTTP 200) |
 | Browser viewport sweep | Not completed: Playwright Chromium could not launch because the workstation lacks `libnspr4.so`; installing system browser dependencies requires interactive sudo authentication. Responsive rules were reviewed at the requested CSS breakpoints. |
+| Vercel production report smoke | Passed at `https://rrf-hr-nexus.vercel.app`: root/protected routes redirect when signed out; Millmar login works; root and `/signin` route to dashboard after login; dashboard, employees, monthly report, resources, and settings return 200; October preview matches all fixture counts; Excel and PDF download successfully; sign out clears cookies and protected routes redirect again. |
 
 The fictional October report fixtures are reproducible through `supabase/seed.sql` and `npm run seed:monthly-report-fixtures`. They include an October hire (Leah Mercado), existing October promotion (Maria Santos) and regularization (Angela Reyes), location and department transfers, a client reassignment, a separation (Ethan Moreno), birthdays, private uploaded NBI/medical document examples, and a workstation assignment. Fixtures use fictional data and are safe to re-run.
 
