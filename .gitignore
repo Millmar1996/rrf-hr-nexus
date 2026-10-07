@@ -9,3 +9,8 @@ coverage/
 *.log
 *.tsbuildinfo
 .vercel
+
+# Local Supabase agent tooling state
+.agents/skills/
+skills-lock.json
+supabase/.temp/

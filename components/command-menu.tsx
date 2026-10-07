@@ -14,12 +14,14 @@ const actions: { label: string; detail: string; href: string; icon: LucideIcon }
   { label: "201 files", detail: "Review employee document checklists", href: "/records/201-files", icon: FileCheck2 },
   { label: "Resource monitoring", detail: "Manage workstation and equipment assignments", href: "/resources", icon: Armchair },
   { label: "Reports", detail: "View workforce summaries", href: "/reports", icon: ChartNoAxesColumn },
+  { label: "Monthly workforce changes", detail: "Review hires, moves, regularizations and separations", href: "/reports/workforce-changes", icon: ChartNoAxesColumn },
+  { label: "Organization", detail: "Open the employee reporting structure", href: "/organization", icon: Users },
   { label: "Settings", detail: "View workspace reference data", href: "/settings", icon: Settings },
 ];
 
 export function CommandMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
-  const { employees } = useStore();
+  const { employees, resources, references } = useStore();
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -27,8 +29,10 @@ export function CommandMenu({ open, onClose }: { open: boolean; onClose: () => v
     const term = query.trim().toLocaleLowerCase();
     const routeResults = actions.filter((item) => !term || (item.label + " " + item.detail).toLocaleLowerCase().includes(term)).map((item) => ({ ...item, kind: "Action" }));
     const employeeResults = employees.filter((employee) => !employee.archived && (!term || [employee.firstName, employee.middleName, employee.lastName, employee.employeeNumber, employee.email].join(" ").toLocaleLowerCase().includes(term))).slice(0, 6).map((employee) => ({ label: [employee.firstName, employee.middleName, employee.lastName].filter(Boolean).join(" "), detail: employee.employeeNumber + " · " + employee.position, href: "/employees/" + employee.id, icon: Users, kind: "Employee" }));
-    return [...routeResults, ...employeeResults];
-  }, [employees, query]);
+    const resourceResults = resources.filter((resource) => !term || [resource.code,resource.type,resource.location].join(" ").toLocaleLowerCase().includes(term)).slice(0,4).map((resource) => ({label:resource.code,detail:resource.type+" · "+resource.status,href:"/resources?search="+encodeURIComponent(resource.code),icon:Armchair,kind:"Resource"}));
+    const referenceResults = [...references.departments.map(item=>({label:item.name,kind:"Department",href:"/employees?search="+encodeURIComponent(item.name)})),...references.positions.map(item=>({label:item.name,kind:"Position",href:"/employees?search="+encodeURIComponent(item.name)})),...references.clients.map(item=>({label:item.name,kind:"Client",href:"/workforce/assignments?search="+encodeURIComponent(item.name)}))].filter(item=>!term||item.label.toLocaleLowerCase().includes(term)).slice(0,6).map(item=>({...item,detail:item.kind+" · open related HR records",icon:item.kind==="Client"?Users:Users}));
+    return [...routeResults, ...employeeResults, ...resourceResults, ...referenceResults];
+  }, [employees, resources, references, query]);
 
   useEffect(() => {
     if (!open) return;

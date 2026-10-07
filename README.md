@@ -1,63 +1,43 @@
 # RRF HR Nexus
 
-RRF HR Nexus is a Stage 1 master's capstone application for centralized HR information and workforce monitoring at RRFMG's Tuguegarao branch. It reduces repetitive spreadsheet work by connecting employee records with lifecycle history, 201 file monitoring, resource assignments and reporting.
+**Integrated Human Resource Services Management System** for RRFMG's Tuguegarao branch. The approved red and white UI brings employee records, lifecycle history, client assignments, private 201 files, resources, workforce reporting, and master data into one Supabase-backed workspace.
 
-## Current stage
+## Current implementation
 
-Stage 1 establishes the responsive application shell, design system, populated dashboard and the first employee management workflows. All employee names and records are fictional demo information.
+The application uses Supabase PostgreSQL as its authoritative data source. The browser-local demo repository has been removed. Employee CRUD and archive, lifecycle changes, client and resource assignment history, private document upload and signed access, reports, dashboard metrics, organization structure, access requests, and settings are wired to the database and protected by RLS and guarded RPCs.
+
+Supabase migrations and fictional seed records are applied to the connected project. Supabase Auth flows are implemented, but hosted Auth URL settings and the initial administrator email still need to be bound. Until an active Admin is provisioned, no user can enter HR screens. See `docs/ADMIN-PROVISIONING.md` for the one remaining identity input and flow.
 
 ## Stack
 
-- Next.js 16 App Router and React 19
-- TypeScript
-- CSS design system with Lucide icons
-- Browser demo repository behind a small persistence interface
+- Next.js 16 App Router, React 19, TypeScript
+- Supabase PostgreSQL, Auth, Row Level Security, and private Storage
+- Vercel project `rrf-hr-nexus` at <https://rrf-hr-nexus.vercel.app>
+- GitHub repository <https://github.com/Millmar1996/rrf-hr-nexus>
 
 ## Run locally
 
 Requires Node.js 20.9 or newer.
 
-~~~sh
+```sh
 npm install
 npm run dev
-~~~
+```
 
-Open http://localhost:3000. Run npm run lint, npm run typecheck, and npm run build before deployment.
+Open `http://localhost:3000`. Use the fictional SQL seed only in development/demo workspaces. Run `npm run lint`, `npm run typecheck`, and `npm run build` for code checks.
 
-## Environment variables
+## Environment
 
-Stage 1 needs no environment variables. .env.example documents the future DATABASE_URL. Never commit .env or credentials.
+Copy `.env.example` to `.env.local`. The public Supabase URL and publishable key are needed for client integration. `NEXUS_BOOTSTRAP_ADMIN_EMAIL` and `NEXUS_BOOTSTRAP_SECRET` are server-only first-admin bootstrap settings; never put the secret in a `NEXT_PUBLIC_` variable. No service-role key is required. Values remain out of Git.
 
-## Implemented modules
+## Supabase artifacts
 
-- Dashboard with workforce metrics, recent lifecycle activity, upcoming dates, 201 file completeness, resource status and quick actions.
-- Employee directory with search, status, department, employment type and client filters, sorting, pagination, validated create/edit, profile views and archive.
-- Employee profile tabs for overview, employment history, 201 checklist, resources and activity.
-- Lifecycle events for hire, promotion, transfer, regularization, client reassignment and separation. New employee creation records a Hire event.
-- 201 file completeness overview and employee document category checklist. File upload is intentionally disabled until storage is configured.
-- Resource monitoring for workstations, computers and other equipment, with employee assignment.
-- Reports overview for headcount, department, status, client, 201 completeness, lifecycle and resource utilization.
-- Settings overview for organizational reference lists.
+- Browser/server SSR clients and generated types: `lib/supabase/`
+- Ordered migrations: `supabase/migrations/`
+- Fictional seed SQL: `supabase/seed.sql`
+- Auth, deployment and first-admin notes: `docs/ADMIN-PROVISIONING.md`
+- System, schema, role, business-rule, test, and change documentation: `docs/`
 
-## Persistence and authentication limitations
+## Deployment status
 
-There are no PostgreSQL credentials or storage configuration in this workspace. Stage 1 uses browser localStorage through lib/repository.ts. Saved changes are local to one browser and deployment origin; users do not share records across browsers, and browser storage must not hold real personnel data. Seeded demo data loads for a first-time browser.
-
-Authentication and server-side authorization are not configured. The HR Administrator shown in the shell is a demo identity, not a secure login. Do not use real employee information on this deployment. docs/DATA_MODEL.md describes the planned PostgreSQL relationships and access-control requirements.
-
-## Stage 2 recommendations
-
-1. Provision PostgreSQL and replace the browser adapter with server-side repositories and migrations.
-2. Add authenticated sessions, server-enforced Administrator / HR Manager / HR Staff / Viewer permissions, and audit logging.
-3. Configure private document storage, access policies, retention and expiry notifications before enabling uploads.
-4. Move organizational reference lists to database-backed settings and add history-preserving resource assignment records.
-5. Add import/export, date-ranged reports, backup/restore, and acceptance testing with HR staff.
-
-## Structure
-
-- app/ application routing and global visual system
-- components/ shell, dashboard, employee and supporting module screens
-- lib/types.ts domain types; lib/seed.ts fictional sample records
-- lib/repository.ts persistence boundary and browser demo adapter
-- lib/store.tsx Stage 1 client data store and domain actions
-- docs/DATA_MODEL.md PostgreSQL model and migration guidance
+Production and Development Vercel environments have the public Supabase connection values. Production also has the server-only bootstrap secret. Preview variables could not be assigned because the Vercel project is not linked to a Git repository/branch. The latest local changes still need final validation, commit, push, and deployment. Hosted Supabase Auth URL configuration and the initial Admin are still pending; no real personnel data is present.
