@@ -32,6 +32,6 @@
 
 - Confirmed the report and main HR workspace both query the linked Supabase database; no runtime localStorage, static employee fixture, or empty-database demo fallback was present.
 - Identified that the source-of-truth itself still contained the fictional seed set. Removed its 22 employees and related lifecycle, client assignment, document, resource, resource assignment, and fixture audit rows, plus two private fixture files. Preserved schema, migrations, master data, Millmar's Admin profile, and access/profile audit history.
-- Made empty compliance report/dashboard completion show 0% when there are no employees instead of implying that an empty population is fully complete.
+- Made empty compliance summaries on the dashboard, 201 Files, Reports, and Monthly HR Report show 0% when there are no employees instead of implying that an empty population is fully complete.
 - Clarified in docs that fictional data is explicit development seeding only; it is never created on app start or during Vercel builds.
 - Verified zero-state preview and both exports in local production mode and on Vercel; then verified a temporary employee/promotion through the production database workflows and confirmed the report and exports agreed before removing the test rows. Deployed as `c4500eb`.

@@ -7,6 +7,7 @@
 - **Separation:** stores a Separation event and effective date, marks status Separated and archived, closes active client assignment, releases active resource assignments, and retains employee documents and history.
 - **Rehire:** a Rehire event reactivates a retained employee and can establish a current client assignment.
 - **201 compliance:** required active document requirements are joined to uploaded metadata. No file means Missing; expiry before today means Expired; expiry within 30 days means Expiring soon; otherwise Complete. Dashboard and reports use the same calculation. Binary files remain in private Storage.
+- **Empty compliance population:** when there are no employees to assess, dashboard, 201 Files, Reports, and Monthly HR Report show 0% with zero issue counts. If employees exist but no active required document types are configured, their compliance is treated as complete because there are no requirements to miss.
 - **Resources:** assignment history is append-only. Active assignment means Assigned; release returns the resource to Available. Maintenance and Inactive remain explicit non-assigned states.
 - **Audit:** table triggers write actor, action, entity, old/new row data, and timestamp. Audit records are not editable through application policies.
 - **Monthly workforce changes:** counts and affected employees are calculated from lifecycle records by effective date and event type for month/year or custom range; no summary rows are saved.
