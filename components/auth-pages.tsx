@@ -49,7 +49,7 @@ export function AuthPage({ notice, authConfigured }: { notice?: string; authConf
       <div className="auth-brand"><Link href="/dashboard"><span>RRF HR <em>Nexus</em></span><small>Tuguegarao Branch</small></Link></div>
       <div className="auth-form-wrap"><span className="auth-overline">RRFMG · TUGUEGARAO</span><h1>Welcome back.</h1><p className="auth-support">Sign in to continue to HR Nexus.</p>
         <form className="auth-form" onSubmit={submit}>
-          <label className="field"><span>Username</span><input autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)}/></label>
+          <label className="field"><span>Username</span><input type="text" autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)}/></label>
           <label className="field"><span>Password</span><input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)}/></label>
           <button className="button primary auth-submit" type="submit" disabled={submitting || !authConfigured}>{submitting ? "Signing in…" : "Sign in"}<ArrowRight size={16}/></button>
           {message && <p className="auth-message" role="status">{message}</p>}
