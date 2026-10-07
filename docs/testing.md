@@ -75,6 +75,7 @@ The fictional October report fixtures are reproducible only when a developer int
 | One employee and one promotion | Passed using the same authenticated `save_employee` and `record_lifecycle_event` RPCs invoked by the workspace UI: one employee and one promotion appeared in Supabase, the production report, and both exports; current position changed to Operations Coordinator. The temporary test row, event, assignment, and audit entries were then removed. |
 | Cross-screen data consistency | Passed: authenticated dashboard, employee directory, lifecycle, 201 files, resources, and monthly report routes all load; the shared workspace query saw one test employee during the test and zero after cleanup, matching the report. |
 | UI/browser interaction | Not run in a real browser in this environment. Route delivery, authenticated database/RPC workflows, report preview endpoints, and exports were exercised over HTTP. |
+| Final production deployment | Passed: commit `c4500eb` is Ready at `https://rrf-hr-nexus.vercel.app`; authenticated HR routes, empty October report, XLSX, and PDF were rechecked against the deployed version. |
 
 ## Scope and remaining verification
 
