@@ -5,6 +5,7 @@ import {
   isCurrentAssignmentEmployee,
   isRegularizationDue,
   isSelectableMasterValue,
+  selectableMasterValues,
   lifecycleStatusValue,
   lifecycleEventValues,
   clientReassignmentValues,
@@ -67,4 +68,26 @@ test("inactive master values are hidden for new records but retained for existin
   assert.equal(isSelectableMasterValue(inactiveEmploymentType), false);
   assert.equal(isSelectableMasterValue(inactiveClient, "QA TEST Client"), true);
   assert.equal(isSelectableMasterValue(inactiveEmploymentType, "QA TEST Employment Type"), true);
+});
+
+test("inactive values are excluded consistently across every master-backed selector", () => {
+  const categories = [
+    "Departments", "Positions", "Employment Types", "Employment Statuses", "Clients",
+    "Locations", "Document Requirements", "Resource Types", "Separation Types",
+  ];
+  for (const category of categories) {
+    const values = [
+      { id: "active", name: `Active ${category}`, is_active: true },
+      { id: "inactive", name: `QA TEST Inactive ${category}`, is_active: false },
+    ];
+    assert.deepEqual(selectableMasterValues(values).map(({ id }) => id), ["active"], `${category}: hidden for new records`);
+    assert.deepEqual(selectableMasterValues(values, values[1].name).map(({ id }) => id), ["active", "inactive"], `${category}: retained on existing record`);
+  }
+});
+
+test("token endpoint origin policy rejects cross-origin browser requests", async () => {
+  const { isSameOriginRequest } = await import("../lib/supabase/request-origin.ts");
+  assert.equal(isSameOriginRequest({ origin: "https://rrf-hr-nexus.vercel.app", secFetchSite: "same-origin", expectedOrigin: "https://rrf-hr-nexus.vercel.app" }), true);
+  assert.equal(isSameOriginRequest({ origin: "https://attacker.example", secFetchSite: "cross-site", expectedOrigin: "https://rrf-hr-nexus.vercel.app" }), false);
+  assert.equal(isSameOriginRequest({ origin: null, secFetchSite: "cross-site", expectedOrigin: "https://rrf-hr-nexus.vercel.app" }), false);
 });

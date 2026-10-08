@@ -27,7 +27,7 @@ const blank: WorkspaceData = { employees: [], events: [], resources: [], referen
 const Context = createContext<Store | null>(null);
 
 async function requireCurrentUserId() {
-  const response = await fetch("/api/auth/token", { cache: "no-store" });
+  const response = await fetch("/api/auth/user-id", { cache: "no-store" });
   const session = await response.json() as { user_id?: string };
   if (!response.ok || !session.user_id) throw new Error("Sign in to save HR records.");
   return session.user_id;

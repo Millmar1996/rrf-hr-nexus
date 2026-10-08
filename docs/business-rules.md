@@ -43,13 +43,20 @@ client is seeded until authoritative workbooks are available.
 
 ## Archive versus separation
 
-Archiving is an administrative visibility change. It preserves the employee
-record, open assignment rows, documents, and history; it does not represent an
-employment termination. Current client allocation summaries count only open
-assignments belonging to non-archived employees whose employment status is
-marked employed. An archived employee may still show an open historical
-assignment on their profile, clearly labeled as belonging to an archived
-record.
+Archiving alone is an administrative visibility change, not a separation. It
+sets the administrative archived flag and hides the employee from the active
+directory while preserving the employee row, documents, lifecycle/audit
+history, and all assignment history. It does not change employment status,
+close a client assignment, or release assigned equipment. An open assignment
+remains visible on the archived profile and an assigned resource remains
+unavailable until HR explicitly releases it or records separation.
+
+Current operational headcount and client-allocation totals exclude employees
+who are archived or whose employment status is not marked employed. Resource
+inventory continues to count a resource with an open assignment as Assigned,
+even if its employee is archived, because the equipment has not been returned.
+This can surface an archived employee's resource as still assigned and needing
+follow-up; it must not be counted as available.
 
 Separation is the employment-ending transaction. It records a configured
 separation type and effective date, sets the separated status and archived

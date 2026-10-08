@@ -9,6 +9,9 @@
     "import:hr-master-data": "node scripts/import-hr-master-data.mjs",
     "seed:monthly-report-fixtures": "node scripts/seed-monthly-report-fixtures.mjs",
     "test:hr-regressions": "node --experimental-strip-types --test test/hr-rules.test.mjs",
+    "qa:role-guards": "npx --yes supabase@latest db query --linked --file scripts/qa-role-permission-check.sql --output table",
+    "qa:master-active": "npx --yes supabase@latest db query --linked --file scripts/qa-master-active-check.sql --output table",
+    "qa:archive-only": "npx --yes supabase@latest db query --linked --file scripts/qa-archive-only-check.sql --output table",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },

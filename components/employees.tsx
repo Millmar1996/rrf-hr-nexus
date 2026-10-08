@@ -7,7 +7,7 @@ import { useStore } from "@/lib/store";
 import type { Employee } from "@/lib/types";
 import { documentStatus, documentStatusLabel } from "@/lib/document-status";
 import { isCurrentlyEmployedStatus } from "@/lib/hr-options";
-import { isRegularizationDue, isSelectableMasterValue, matchesSearch } from "@/lib/hr-rules";
+import { isRegularizationDue, selectableMasterValues, matchesSearch } from "@/lib/hr-rules";
 
 const blankEmployee: Omit<Employee, "id" | "createdAt" | "updatedAt"> = {
   employeeNumber: "", firstName: "", middleName: "", lastName: "", preferredName: "", email: "", phone: "", birthday: "",
@@ -79,12 +79,12 @@ export function EmployeeFormPage({ id }: { id?: string }) {
   const field = (key: keyof typeof values, label: string, type = "text", required = false) => <label className="field"><span>{label}{required && <i> *</i>}</span><input type={type} value={String(values[key] ?? "")} onChange={(e)=>set(key,e.target.value)} aria-invalid={!!errors[key]} aria-describedby={errors[key] ? "err-" + key : undefined}/>{errors[key] && <small className="field-error" id={"err-" + key}>{errors[key]}</small>}</label>;
   const select = (key: keyof typeof values, label: string, options: string[], required = false, placeholder = `Select ${label.toLowerCase()}`, disabled = false) => <label className="field"><span>{label}{required && <i> *</i>}</span><select value={String(values[key] ?? "")} onChange={(e)=>set(key,e.target.value)} aria-invalid={!!errors[key]} aria-describedby={errors[key] ? "err-" + key : undefined} required={required} disabled={disabled}><option value="">{placeholder}</option>{options.map((option)=><option key={option} value={option}>{option}</option>)}</select>{errors[key] && <small className="field-error" id={"err-" + key}>{errors[key]}</small>}</label>;
   const current = existing;
-  const departments = references.departments.filter((item)=>isSelectableMasterValue(item,current?.department));
-  const positions = references.positions.filter((item)=>isSelectableMasterValue(item,current?.position)&&(!item.department_id||item.department_id===references.departments.find((d)=>d.name===values.department)?.id));
-  const employmentTypes = references.employmentTypes.filter((item)=>isSelectableMasterValue(item,current?.type));
-  const employmentStatuses = references.employmentStatuses.filter((item)=>isSelectableMasterValue(item,current?.status));
-  const clients = references.clients.filter((item)=>isSelectableMasterValue(item,current?.client));
-  const locations = references.locations.filter((item)=>isSelectableMasterValue(item,current?.location));
+  const departments = selectableMasterValues(references.departments,current?.department);
+  const positions = selectableMasterValues(references.positions,current?.position).filter((item)=>!item.department_id||item.department_id===references.departments.find((d)=>d.name===values.department)?.id);
+  const employmentTypes = selectableMasterValues(references.employmentTypes,current?.type);
+  const employmentStatuses = selectableMasterValues(references.employmentStatuses,current?.status);
+  const clients = selectableMasterValues(references.clients,current?.client);
+  const locations = selectableMasterValues(references.locations,current?.location);
   const supervisorOptions=employees.filter(employee=>employee.id!==id&&((!employee.archived&&isCurrentlyEmployedStatus(employee.status,references.employmentStatuses))||employee.id===existing?.supervisorId)).map(employee=>`${fullName(employee)} · ${employee.employeeNumber}`);
   const resourceOptions = resources.filter((resource)=>resource.status==="Available"||resource.assignedTo===id);
   const [resourceIds,setResourceIds]=useState<string[]|null>(null);

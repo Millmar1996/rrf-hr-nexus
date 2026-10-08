@@ -102,6 +102,11 @@ export function isSelectableMasterValue(value: { name: string; is_active: boolea
   return value.is_active || value.name === currentValue;
 }
 
+/** Keep inactive values available only when they are already stored on this record. */
+export function selectableMasterValues<T extends { name: string; is_active: boolean }>(values: T[], currentValue = "") {
+  return values.filter((value) => isSelectableMasterValue(value, currentValue));
+}
+
 export function statusCode(name: string) {
   return name.trim().toUpperCase().replace(/[^A-Z0-9]+/g, "_");
 }
