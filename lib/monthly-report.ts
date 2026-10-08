@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { documentStatus } from "@/lib/document-status";
-import { lifecycleEventValues } from "@/lib/hr-rules";
+import { clientReassignmentValues, lifecycleEventValues } from "@/lib/hr-rules";
 
 export type MonthlyEmployee = {
   id: string; number: string; name: string; department: string; position: string;
@@ -96,33 +96,20 @@ export async function generateMonthlyReport(month: number, year: number): Promis
 
     const currentEvents = eventsRaw.filter((e) => within(e.effective_date, dateRange.start, dateRange.end));
     const clientEventRows = currentEvents.filter((e) => e.event_type === "CLIENT_REASSIGNMENT");
-    const assignmentsInPeriod = assignments.filter((a) => within(a.start_date, dateRange.start, dateRange.end));
     const clientReassignments = clientEventRows.map((event) => {
       const old = json(event.previous_data); const fresh = json(event.new_data); const employee = employeesById.get(event.employee_id);
-      const newAssignment = assignments.find((a) => a.employee_id === event.employee_id && a.start_date === event.effective_date);
-      const priorAssignment = newAssignment ? assignments.filter((a) => a.employee_id === event.employee_id && a.end_date && a.end_date <= newAssignment.start_date).sort((a, b) => b.start_date.localeCompare(a.start_date))[0] : undefined;
-      const labels = lifecycleEventValues(event.event_type, old, fresh, eventReferences);
-      const previousClient = priorAssignment?.client_name || labels.previous;
-      const nextClient = newAssignment?.client_name || labels.next;
+      // Lifecycle snapshots are the authoritative source for a movement. Current assignment
+      // rows can point at a later reassignment (or be closed during separation), so using them
+      // here can rewrite history in monthly reports and exports.
+      const { previousClient, newClient: nextClient } = clientReassignmentValues(old, fresh, eventReferences);
       return { employee: employee ? fullName(employee) : "Archived employee", employeeNumber: employee?.employee_number ?? "", previousClient: previousClient || "Previous client not recorded", newClient: nextClient || "New client not recorded", effectiveDate: event.effective_date };
     });
-    for (const assignment of assignmentsInPeriod) {
-      if (!clientEventRows.some((event) => event.employee_id === assignment.employee_id && event.effective_date === assignment.start_date)) {
-        const prior = assignments.filter((a) => a.employee_id === assignment.employee_id && a.end_date && a.end_date <= assignment.start_date).sort((a, b) => b.start_date.localeCompare(a.start_date))[0];
-        if (!prior) continue;
-        const employee = employeesById.get(assignment.employee_id);
-        clientReassignments.push({ employee: employee ? fullName(employee) : "Archived employee", employeeNumber: employee?.employee_number ?? "", previousClient: prior.client_name, newClient: assignment.client_name, effectiveDate: assignment.start_date });
-      }
-    }
 
     const movements: MonthlyMovement[] = currentEvents.map((event) => {
       const employee = employeesById.get(event.employee_id);
       const previous = json(event.previous_data); const fresh = json(event.new_data);
       const labels = lifecycleEventValues(event.event_type, previous, fresh, eventReferences);
-      const matchingClient = event.event_type === "CLIENT_REASSIGNMENT" ? clientReassignments.find((item) => item.employeeNumber === employee?.employee_number && item.effectiveDate === event.effective_date) : undefined;
-      const previousValue = matchingClient?.previousClient ?? labels.previous;
-      const nextValue = matchingClient?.newClient ?? labels.next;
-      return { id: event.id, employeeId: event.employee_id, employeeNumber: employee?.employee_number ?? "", employee: employee ? fullName(employee) : "Archived employee", type: titleCase(event.event_type), effectiveDate: event.effective_date, department: employee?.department_id ? "" : "", position: "", previous: previousValue, next: nextValue, separationType: String(fresh.separation_type_name ?? fresh.separation_type ?? separationTypeNames.get(String(fresh.separation_type_id ?? "")) ?? previous.separation_type_name ?? previous.separation_type ?? "") };
+      return { id: event.id, employeeId: event.employee_id, employeeNumber: employee?.employee_number ?? "", employee: employee ? fullName(employee) : "Archived employee", type: titleCase(event.event_type), effectiveDate: event.effective_date, department: employee?.department_id ? "" : "", position: "", previous: labels.previous, next: labels.next, separationType: String(fresh.separation_type_name ?? fresh.separation_type ?? separationTypeNames.get(String(fresh.separation_type_id ?? "")) ?? previous.separation_type_name ?? previous.separation_type ?? "") };
     }).map((movement) => {
       const employee = employeesById.get(movement.employeeId);
       return { ...movement, department: employee?.department_id ?? "", position: employee?.position_id ?? "" };

@@ -53,6 +53,16 @@ export function lifecycleEventValues(
   return { previous: previousLabel, next: nextLabel };
 }
 
+/** Resolve client movement values exclusively from the event's immutable data snapshot. */
+export function clientReassignmentValues(
+  previous: LifecycleValue | null | undefined,
+  next: LifecycleValue | null | undefined,
+  refs: LifecycleReferences = {},
+) {
+  const values = lifecycleEventValues("CLIENT_REASSIGNMENT", previous, next, refs);
+  return { previousClient: values.previous, newClient: values.next };
+}
+
 export function lifecycleStatusValue(status: { id: string; name: string }) {
   return {
     status_id: status.id,

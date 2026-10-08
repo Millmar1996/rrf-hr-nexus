@@ -7,6 +7,7 @@ import {
   isSelectableMasterValue,
   lifecycleStatusValue,
   lifecycleEventValues,
+  clientReassignmentValues,
   lifecycleValueLabel,
   matchesSearch,
 } from "../lib/hr-rules.ts";
@@ -24,6 +25,11 @@ test("client reassignment resolves structured ids to labels", () => {
     lifecycleValueLabel({ client_id: "client-a" }, { clients }),
     lifecycleValueLabel({ client_id: "client-b" }, { clients }),
   ], ["Client A", "Client B"]);
+  assert.deepEqual(clientReassignmentValues(
+    { client_id: "client-a", client_name: "Client A" },
+    { client_id: "client-b", client_name: "Client B" },
+    { clients },
+  ), { previousClient: "Client A", newClient: "Client B" });
 });
 
 test("separation label remains independent from optional notes", () => {
