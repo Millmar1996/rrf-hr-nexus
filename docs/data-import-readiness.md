@@ -36,6 +36,8 @@ Production browser verification confirmed:
   `/signin`.
 - The signed-out `/signin` page made **0** requests to `/api/auth/token` during
   the observed wait; no repeated 401 token-request loop occurred.
+- A final signed-in browser pass captured zero console errors or uncaught page
+  errors on `/signin`, `/dashboard`, `/employees`, and `/reports/monthly`.
 
 The authenticated session remains backed by the existing HttpOnly cookie
 flow. No authentication rewrite was made.
@@ -179,6 +181,14 @@ returned 200. The anonymous public object URL was rejected (HTTP 400). The QA
 document metadata and Storage object were then deleted (204 and 200); a follow-
 up public object request confirmed the object was unavailable. No QA file
 remains from this pass.
+
+## Responsive result
+
+The authenticated browser checked the dashboard, employee directory, correct
+QA employee profile, employee form, lifecycle, 201 files, resources, and monthly
+report at 1440, 1024, 900, 768, 640, 430, and 390px. On every checked route and
+width, document and body scroll widths matched the viewport; no page-level
+horizontal overflow was observed.
 
 ## Regression test count/result
 
