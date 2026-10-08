@@ -4,7 +4,7 @@ import type { MonthlyReport } from "@/lib/monthly-report";
 
 const monthName = (month: number, year: number) => new Intl.DateTimeFormat("en-PH", { month: "long", year: "numeric", timeZone: "Asia/Manila" }).format(new Date(Date.UTC(year, month - 1, 1, 12)));
 
-const eventRows = (rows: MonthlyReport["movements"]["all"]) => rows.map((r) => ({ "Employee ID": r.employeeNumber, Employee: r.employee, Movement: r.type, "Effective date": r.effectiveDate, Previous: r.previous, New: r.next, Department: r.department, Position: r.position }));
+const eventRows = (rows: MonthlyReport["movements"]["all"]) => rows.map((r) => ({ "Employee ID": r.employeeNumber, Employee: r.employee, Movement: r.type, "Effective date": r.effectiveDate, Previous: r.previous, New: r.next, "Separation type": r.separationType, Department: r.department, Position: r.position }));
 
 export async function createMonthlyWorkbook(report: MonthlyReport): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
@@ -107,7 +107,10 @@ export async function createMonthlyPdf(report: MonthlyReport): Promise<Buffer> {
       const table = (headers: string[], rows: string[][]) => {
         const widths = headers.map(() => pageWidth / headers.length);
         const drawRow = (cells: string[], header: boolean) => {
-          const height = 21;
+          const fontName = header ? "Helvetica-Bold" : "Helvetica";
+          doc.font(fontName).fontSize(7.5);
+          const cellHeights = cells.map((cell, index) => doc.heightOfString(String(cell ?? ""), { width: widths[index] - 8 }));
+          const height = Math.max(21, ...cellHeights.map((value) => Math.ceil(value + 10)));
           if (doc.y + height > doc.page.height - 55) {
             doc.addPage(); drawHeader();
             if (!header) drawRow(headers, true);
@@ -116,7 +119,7 @@ export async function createMonthlyPdf(report: MonthlyReport): Promise<Buffer> {
           cells.forEach((cell, index) => {
             if (header) doc.rect(x, y, widths[index], height).fill(red);
             else doc.rect(x, y, widths[index], height).fill(index % 2 ? "#FFFFFF" : "#F7F5F3");
-            doc.fillColor(header ? "#FFFFFF" : charcoal).font(header ? "Helvetica-Bold" : "Helvetica").fontSize(7.5).text(String(cell ?? ""), x + 4, y + 6, { width: widths[index] - 8, height: height - 4, ellipsis: true });
+            doc.fillColor(header ? "#FFFFFF" : charcoal).font(fontName).fontSize(7.5).text(String(cell ?? ""), x + 4, y + 5, { width: widths[index] - 8, height: height - 8 });
             x += widths[index];
           });
           doc.y = y + height;
@@ -158,11 +161,11 @@ export async function createMonthlyPdf(report: MonthlyReport): Promise<Buffer> {
       table(["Metric", report.comparison.previousLabel, report.comparison.currentLabel, "Change"], report.comparison.metrics.map((e) => [e.label, `${e.previous}${e.suffix ?? ""}`, `${e.current}${e.suffix ?? ""}`, `${e.delta > 0 ? "+" : ""}${e.delta}${e.suffix ?? ""}`]));
       doc.fillColor(muted).font("Helvetica").fontSize(8).text(report.comparison.note, { width: pageWidth });
       heading("Employee Movements");
-      table(["Employee", "Movement", "Effective", "Previous", "New"], [...report.movements.all, ...report.assignments.map((e, i) => ({ id: `ca-${i}`, employee: e.employee, type: "Client Reassignment", effectiveDate: e.effectiveDate, previous: e.previousClient, next: e.newClient }))].map((e) => [e.employee, e.type, e.effectiveDate, e.previous, e.next]));
+      table(["Employee", "Movement", "Effective", "Previous", "New", "Separation type"], report.movements.all.map((e) => [e.employee, e.type, e.effectiveDate, e.previous, e.next, e.separationType]));
       const range = doc.bufferedPageRange();
       for (let page = range.start; page < range.start + range.count; page++) {
         doc.switchToPage(page);
-        const y = doc.page.height - 34;
+        const y = doc.page.height - 76;
         doc.save().strokeColor("#E2DEDA").moveTo(doc.page.margins.left, y - 9).lineTo(doc.page.width - doc.page.margins.right, y - 9).stroke();
         doc.fillColor(muted).font("Helvetica").fontSize(8).text(`RRF HR Nexus · Monthly HR Report — ${report.metadata.label}`, doc.page.margins.left, y, { width: pageWidth / 2, lineBreak: false });
         doc.text(`Page ${page + 1} of ${range.count}`, doc.page.margins.left + pageWidth / 2, y, { width: pageWidth / 2, align: "right", lineBreak: false });
