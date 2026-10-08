@@ -4,6 +4,9 @@ import Link from "next/link";
 import { ArrowRight, ArrowUpRight, FileWarning, Laptop, Plus, Repeat2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import type { LifecycleEvent } from "@/lib/types";
+import { documentStatus } from "@/lib/document-status";
+import { isCurrentlyEmployedStatus } from "@/lib/hr-options";
+import { isRegularizationDue } from "@/lib/hr-rules";
 
 function initials(name: string) { return name.split(" ").map((part) => part[0]).slice(0, 2).join(""); }
 function daypart() { const hour = new Date().getHours(); return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening"; }
@@ -23,35 +26,35 @@ function eventCopy(event: LifecycleEvent) {
   if (event.type === "Separation") return "Separated from RRFMG";
   return event.notes || event.type;
 }
-function documentState(expiryDate: string | null | undefined) {
-  if (!expiryDate) return "complete";
-  const days = (new Date(expiryDate + "T12:00:00").getTime() - Date.now()) / 86400000;
-  return days < 0 ? "expired" : days <= 30 ? "expiring" : "complete";
-}
-
 export function Dashboard({ name }: { name: string }) {
-  const { employees, events, resources, documents, references } = useStore();
-  const currentEmployees = employees.filter((employee) => !employee.archived && employee.status !== "Separated");
-  const now = new Date(); const month = now.toISOString().slice(0, 7);
+  const { employees, events, resources, documents, documentExemptions, references } = useStore();
+  const currentEmployees = employees.filter((employee) => !employee.archived && isCurrentlyEmployedStatus(employee.status, references.employmentStatuses));
+  const now = new Date(); const localDate = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const nextMonth = new Date(now); nextMonth.setDate(nextMonth.getDate() + 30);
-  const dueEmployees = currentEmployees.filter((employee) => employee.status === "Probationary" && employee.regularizationDate && employee.regularizationDate <= nextMonth.toISOString().slice(0, 10));
+  const nextMonthDate = localDate(nextMonth);
+  const dueEmployees = currentEmployees.filter((employee) => isRegularizationDue(employee.status, employee.regularizationDate, nextMonthDate));
   const newHires = currentEmployees.filter((employee) => employee.hiredAt.slice(0, 7) === month).length;
   const availableSeats = resources.filter((resource) => /workstation|seat/i.test(resource.type) && resource.status === "Available").length;
   const required = references.documentTypes.filter((item) => item.is_active && item.is_required);
   const complianceRows = currentEmployees.map((employee) => {
     const states = required.map((type) => {
       const file = documents.find((item) => item.employee_id === employee.id && item.document_type_id === type.id);
-      return file ? documentState(file.expiry_date) : "missing";
+      const exemption = documentExemptions.find((item) => item.employee_id === employee.id && item.document_type_id === type.id);
+      return documentStatus({ document: file, required: true, notApplicable: !!exemption });
     });
     return { employee, states };
   });
   const totalRequired = complianceRows.reduce((count, row) => count + row.states.length, 0);
-  const completeRequired = complianceRows.reduce((count, row) => count + row.states.filter((state) => state === "complete").length, 0);
+  const completeRequired = complianceRows.reduce((count, row) => count + row.states.filter((state) => state === "COMPLETE" || state === "NOT_APPLICABLE").length, 0);
   const compliance = currentEmployees.length ? (totalRequired ? Math.round((completeRequired / totalRequired) * 100) : 100) : 0;
-  const missingDocs = complianceRows.reduce((count, row) => count + row.states.filter((state) => state === "missing").length, 0);
-  const expiringDocs = complianceRows.reduce((count, row) => count + row.states.filter((state) => state === "expiring").length, 0);
-  const expiredDocs = complianceRows.reduce((count, row) => count + row.states.filter((state) => state === "expired").length, 0);
-  const missingEmployees = complianceRows.filter((row) => row.states.includes("missing")).length;
+  const missingDocs = complianceRows.reduce((count, row) => count + row.states.filter((state) => state === "MISSING").length, 0);
+  const expiringDocs = complianceRows.reduce((count, row) => count + row.states.filter((state) => state === "EXPIRING_SOON").length, 0);
+  const expiredDocs = complianceRows.reduce((count, row) => count + row.states.filter((state) => state === "EXPIRED").length, 0);
+  const missingEmployees = complianceRows.filter((row) => row.states.includes("MISSING")).length;
+  const pendingEmployees = complianceRows.filter((row) => row.states.some((state) => state === "PENDING" || state === "FOR_VERIFICATION")).length;
+  const expiryEmployees = complianceRows.filter((row) => row.states.some((state) => state === "EXPIRING_SOON" || state === "EXPIRED")).length;
+  const issueEmployees = complianceRows.filter((row) => row.states.some((state) => ["MISSING", "PENDING", "FOR_VERIFICATION", "EXPIRING_SOON", "EXPIRED"].includes(state))).length;
   const activity = [...events].sort((a, b) => b.recordedAt.localeCompare(a.recordedAt)).slice(0, 5);
   const employeeName = (id: string) => { const employee = employees.find((item) => item.id === id); return employee ? employee.firstName + " " + employee.lastName : "Employee"; };
   const comingUp = [
@@ -62,14 +65,14 @@ export function Dashboard({ name }: { name: string }) {
   const nextDue = [...dueEmployees].sort((a, b) => a.regularizationDate.localeCompare(b.regularizationDate))[0]?.regularizationDate;
   const attention = [
     { title: "Missing 201 documents", detail: "employees with missing files", count: missingEmployees, href: "/records/201-files?filter=missing" },
-    { title: "Regularization reviews", detail: "due or overdue", count: dueEmployees.length, href: "/employees?status=Probationary" },
-    { title: "Employees without workstations", detail: "need assignment", count: currentEmployees.filter((employee) => !employee.seat).length, href: "/resources?filter=available" },
-    { title: "Expiring or expired documents", detail: "need review", count: expiringDocs + expiredDocs, href: "/records/201-files?filter=expiry" },
+    { title: "Regularization reviews", detail: "due or overdue", count: dueEmployees.length, href: "/employees?filter=regularization-due" },
+    { title: "Employees without workstations", detail: "need assignment", count: currentEmployees.filter((employee) => !employee.seat).length, href: "/employees?filter=without-workstation" },
+    { title: "Documents awaiting verification", detail: "employees need HR review", count: pendingEmployees, href: "/records/201-files?filter=verification" },
+    { title: "Expiring or expired documents", detail: "employees need review", count: expiryEmployees, href: "/records/201-files?filter=expiry" },
   ];
   const assigned = resources.filter((resource) => resource.status === "Assigned").length;
   const available = resources.filter((resource) => resource.status === "Available").length;
   const maintenance = resources.filter((resource) => resource.status === "Maintenance").length;
-  const issueCount = missingDocs + expiringDocs + expiredDocs;
 
   return <div className="page-stack dashboard-page">
     <section className="dashboard-editorial">
@@ -79,9 +82,9 @@ export function Dashboard({ name }: { name: string }) {
         <p className="intro-copy">Here’s what needs your attention across the team today.</p>
         <div className="dashboard-actions"><Link href="/employees/new" className="button primary"><Plus size={17}/> Add employee</Link><Link href="/workforce/lifecycle" className="text-action"><Repeat2 size={16}/> Record movement</Link><Link href="/records/201-files" className="text-action"><FileWarning size={16}/> Review 201 files</Link><Link href="/resources" className="text-action"><Laptop size={16}/> Assign resource</Link></div>
       </div>
-      <Link href="/workforce/lifecycle?filter=regularization" className="feature-panel dashboard-feature"><span className="feature-kicker">UPCOMING · WORKFORCE</span><b className="feature-number">{dueEmployees.length}</b><span className="feature-title">Regularization<br/>reviews are due</span><span className="feature-rule"/><span className="feature-footer">{nextDue ? `Next review ${new Date(nextDue + "T12:00:00").toLocaleDateString("en-PH", { month: "long", day: "numeric" })}` : "No reviews due in 30 days"}<span>Review employees <ArrowUpRight size={17}/></span></span><span className="feature-index" aria-hidden="true">01</span></Link>
+      <Link href="/employees?filter=regularization-due" className="feature-panel dashboard-feature"><span className="feature-kicker">UPCOMING · WORKFORCE</span><b className="feature-number">{dueEmployees.length}</b><span className="feature-title">Regularization<br/>reviews are due</span><span className="feature-rule"/><span className="feature-footer">{nextDue ? `Next review ${new Date(nextDue + "T12:00:00").toLocaleDateString("en-PH", { month: "long", day: "numeric" })}` : "No reviews due in 30 days"}<span>Review employees <ArrowUpRight size={17}/></span></span><span className="feature-index" aria-hidden="true">01</span></Link>
     </section>
-    <section className="snapshot" aria-labelledby="snapshot-title"><div className="snapshot-heading"><span id="snapshot-title">WORKFORCE SNAPSHOT</span><Link href="/employees">View directory <ArrowRight size={14}/></Link></div><div className="snapshot-metrics"><Link href="/employees" className="snapshot-metric"><b>{currentEmployees.length}</b><span>Employees</span></Link><Link href="/reports/workforce-changes?period=month" className="snapshot-metric"><b>{newHires}</b><span>New this month</span></Link><Link href="/records/201-files?filter=issues" className="snapshot-metric"><b>{issueCount}</b><span>File issues</span></Link><Link href="/resources" className="snapshot-metric"><b>{availableSeats}</b><span>Seats available</span></Link></div></section>
+    <section className="snapshot" aria-labelledby="snapshot-title"><div className="snapshot-heading"><span id="snapshot-title">WORKFORCE SNAPSHOT</span><Link href="/employees">View directory <ArrowRight size={14}/></Link></div><div className="snapshot-metrics"><Link href="/employees" className="snapshot-metric"><b>{currentEmployees.length}</b><span>Employees</span></Link><Link href="/reports/workforce-changes?period=month" className="snapshot-metric"><b>{newHires}</b><span>New this month</span></Link><Link href="/records/201-files?filter=issues" className="snapshot-metric"><b>{issueEmployees}</b><span>Employees with file issues</span></Link><Link href="/resources?filter=available&category=workstations" className="snapshot-metric"><b>{availableSeats}</b><span>Seats available</span></Link></div></section>
     <section className="dashboard-columns"><section className="recent-activity" aria-labelledby="recent-title"><div className="editorial-section-heading"><div><p className="section-overline">LATEST WORKFORCE CHANGES</p><h2 id="recent-title">Recent activity</h2></div><Link href="/workforce/lifecycle" className="text-action">View lifecycle <ArrowRight size={15}/></Link></div><div className="editorial-activity-list">{activity.length ? activity.map((event, index) => <Link href={"/employees/" + event.employeeId} className="editorial-activity-row" key={event.id}><span className={"activity-avatar avatar-tone-" + (index % 4)}>{initials(employeeName(event.employeeId))}</span><span className="activity-copy"><b>{employeeName(event.employeeId)}</b><span>{eventCopy(event)}</span><small>{activityDate(event.recordedAt)}</small></span><span className="activity-category">{event.type}</span></Link>) : <p className="activity-empty">Recent employee changes will appear here.</p>}</div></section>
       <div className="dashboard-side-content"><section className="attention-surface" aria-labelledby="attention-title"><div className="editorial-section-heading"><div><p className="section-overline">PRIORITIES</p><h2 id="attention-title">Needs attention</h2></div><span className="attention-total">{attention.reduce((sum, item) => sum + item.count, 0)}</span></div><div className="attention-editorial-list">{attention.map((item, index) => <Link href={item.href} className="attention-editorial-row" key={item.title}><span className="attention-index">0{index + 1}</span><span><b>{item.title}</b><small>{item.count} {item.detail}</small></span><ArrowRight size={15}/></Link>)}</div></section>
         <section className="coming-up" aria-labelledby="coming-title"><div className="editorial-section-heading"><div><p className="section-overline">DATES TO KNOW</p><h2 id="coming-title">Coming up</h2></div><Link href="/workforce/lifecycle" className="text-action">All events</Link></div>{comingUp.length ? <div className="coming-list">{comingUp.map(({ employee, date, label }) => <Link href={"/employees/" + employee.id} className="coming-row" key={employee.id + label}><span className="coming-date"><small>{date.toLocaleDateString("en-PH", { month: "short" }).toUpperCase()}</small><b>{date.toLocaleDateString("en-PH", { day: "2-digit" })}</b></span><span><b>{employee.firstName} {employee.lastName}</b><small>{label}</small></span></Link>)}</div> : <p className="activity-empty">No upcoming dates on record.</p>}</section></div>

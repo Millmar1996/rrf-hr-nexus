@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 import { useRouter } from "next/navigation";
 import { Activity, Armchair, ArrowRight, FileCheck2, LayoutDashboard, Plus, Search, Settings, Users, X, ChartNoAxesColumn, type LucideIcon } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { matchesSearch } from "@/lib/hr-rules";
 
 const actions: { label: string; detail: string; href: string; icon: LucideIcon }[] = [
   { label: "Overview", detail: "Open the workforce dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -26,11 +27,11 @@ export function CommandMenu({ open, onClose }: { open: boolean; onClose: () => v
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const results = useMemo(() => {
-    const term = query.trim().toLocaleLowerCase();
-    const routeResults = actions.filter((item) => !term || (item.label + " " + item.detail).toLocaleLowerCase().includes(term)).map((item) => ({ ...item, kind: "Action" }));
-    const employeeResults = employees.filter((employee) => !employee.archived && (!term || [employee.firstName, employee.middleName, employee.lastName, employee.employeeNumber, employee.email].join(" ").toLocaleLowerCase().includes(term))).slice(0, 6).map((employee) => ({ label: [employee.firstName, employee.middleName, employee.lastName].filter(Boolean).join(" "), detail: employee.employeeNumber + " · " + employee.position, href: "/employees/" + employee.id, icon: Users, kind: "Employee" }));
-    const resourceResults = resources.filter((resource) => !term || [resource.code,resource.type,resource.location].join(" ").toLocaleLowerCase().includes(term)).slice(0,4).map((resource) => ({label:resource.code,detail:resource.type+" · "+resource.status,href:"/resources?search="+encodeURIComponent(resource.code),icon:Armchair,kind:"Resource"}));
-    const referenceResults = [...references.departments.map(item=>({label:item.name,kind:"Department",href:"/employees?search="+encodeURIComponent(item.name)})),...references.positions.map(item=>({label:item.name,kind:"Position",href:"/employees?search="+encodeURIComponent(item.name)})),...references.clients.map(item=>({label:item.name,kind:"Client",href:"/workforce/assignments?search="+encodeURIComponent(item.name)}))].filter(item=>!term||item.label.toLocaleLowerCase().includes(term)).slice(0,6).map(item=>({...item,detail:item.kind+" · open related HR records",icon:item.kind==="Client"?Users:Users}));
+    const term = query.trim();
+    const routeResults = actions.filter((item) => matchesSearch(term, [item.label, item.detail])).map((item) => ({ ...item, kind: "Action" }));
+    const employeeResults = employees.filter((employee) => !employee.archived && matchesSearch(term, [employee.firstName, employee.middleName, employee.lastName, employee.employeeNumber, employee.email, employee.position, employee.department, employee.client, employee.location])).slice(0, 6).map((employee) => ({ label: [employee.firstName, employee.middleName, employee.lastName].filter(Boolean).join(" "), detail: employee.employeeNumber + " · " + employee.position, href: "/employees/" + employee.id, icon: Users, kind: "Employee" }));
+    const resourceResults = resources.filter((resource) => matchesSearch(term, [resource.code,resource.type,resource.location])).slice(0,4).map((resource) => ({label:resource.code,detail:resource.type+" · "+resource.status,href:"/resources?search="+encodeURIComponent(resource.code),icon:Armchair,kind:"Resource"}));
+    const referenceResults = [...references.departments.map(item=>({label:item.name,kind:"Department",href:"/employees?search="+encodeURIComponent(item.name)})),...references.positions.map(item=>({label:item.name,kind:"Position",href:"/employees?search="+encodeURIComponent(item.name)})),...references.clients.map(item=>({label:item.name,kind:"Client",href:"/workforce/assignments?search="+encodeURIComponent(item.name)}))].filter(item=>matchesSearch(term,[item.label])).slice(0,6).map(item=>({...item,detail:item.kind+" · open related HR records",icon:item.kind==="Client"?Users:Users}));
     return [...routeResults, ...employeeResults, ...resourceResults, ...referenceResults];
   }, [employees, resources, references, query]);
 

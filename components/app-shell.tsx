@@ -76,7 +76,7 @@ export function AppShell({ profile, notice, authConfigured }: { profile: Workspa
   else if (active.endsWith("/edit") && active.startsWith("/employees/")) page = <EmployeeFormPage id={employeeId} />;
   else if (active.startsWith("/employees/")) page = <EmployeeProfilePage id={employeeId} />;
   else if (active === "/workforce/lifecycle") page = <LifecyclePage />;
-  else if (active === "/records/201-files") page = <FilesPage />;
+  else if (active === "/records/201-files") page = <FilesPage role={profile?.role} />;
   else if (active === "/resources") page = <ResourcesPage />;
   else if (active === "/reports") page = <ReportsPage />;
   else if (active === "/reports/monthly") page = <MonthlyHRReportPage />;
