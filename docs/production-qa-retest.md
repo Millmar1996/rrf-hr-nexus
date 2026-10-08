@@ -36,7 +36,7 @@ The personal portfolio Vercel project was not accessed or changed.
 | RRF-QA-006 Regularization loses new status | Structured old/new status IDs, codes, and labels are stored in lifecycle data; notes remain separate. | **PASS** | Production row stores Probationary → Regular with both status IDs and codes. Profile history, Activity, monthly preview, XLSX, and PDF display the transition. |
 | RRF-QA-007 Inactive values selectable | New-record selectors use active master values; inactive existing values remain displayable on historic records. | **PARTIAL** | Production Add Employee form omitted inactive `QA TEST Client`, inactive employment types, and later deactivated QA clients. The broad set of every master-backed control was not individually exercised. |
 | RRF-QA-008 Activity omits lifecycle events | Profile Activity combines lifecycle entries and system audit changes while suppressing duplicate lifecycle audit rows. | **PASS** | The QA profile Activity and Employment history tabs displayed Promotion, Regularization, Client Reassignment, and Separation. Dashboard Recent activity showed the separation and other lifecycle events. |
-| RRF-QA-009 Dashboard links too broad | Regularization and available-workstation destinations apply the same predicates as their displayed counts. | **PASS** | With one QA employee due by 2026-10-20, dashboard count was 1 and the filtered employee directory returned only that employee. Available workstation count was 1 and the filtered resource page returned the one available workstation. |
+| RRF-QA-009 Dashboard links too broad | Regularization, missing-document, and available-workstation destinations apply the same predicates as their displayed counts. | **PASS** | With one QA employee due by 2026-10-20, dashboard count was 1 and the filtered employee directory returned only that employee. Available workstation count was 1 and the filtered resource page returned the one available workstation. With one active QA employee missing all required files, the dashboard showed one affected employee and `/records/201-files?filter=missing` included that employee. |
 | RRF-QA-010 Full-name search fails | Search normalizes case/whitespace and searches combined employee name plus related fields. | **PASS** | Ctrl+K search for `QA TEST Search Employee 20261008` returned the exact employee and employee number. |
 | RRF-QA-011 Tablet employee directory overflow | Directory switches to compact layout earlier and constrains page width. | **PASS** | Production `/employees` document `scrollWidth` matched viewport width at 1440, 1366, 1024, 900, 768, 640, and 390px. |
 | RRF-QA-012 Archived employee in client totals | Current assignment totals exclude archived/non-employed employees; historical allocation rows remain. Separation closes open assignments. | **PARTIAL** | Production separation removed the QA employee from current allocation and released its workstation. Local rule regression passed for archived/non-employed status. Archive-only behavior with an open client assignment was not separately exercised in production. |
@@ -102,6 +102,8 @@ The personal portfolio Vercel project was not accessed or changed.
 
 - The dashboard due-review number matched its filtered employee result. The
   available workstation number matched the filtered resources result.
+- A positive missing-document count matched the employee returned by the
+  `filter=missing` destination.
 - Dashboard lifecycle activity updated after the QA movement events.
 - `/employees` had no document-level horizontal overflow at 1440, 1366, 1024,
   900, 768, 640, or 390px. This retest did not repeat every route at every
@@ -157,6 +159,8 @@ Created only clearly labeled QA records:
   PDF removed from storage and metadata removed; employee archived.
 - Employee `QA TEST Search Employee 20261008` (`QA TEST SEARCH-20261008`):
   search and due-filter checks completed; employee archived.
+- Employee `QA TEST Missing Docs 20261008` (`QA TEST MISSING-20261008`):
+  missing-document alert count/filter check completed; employee archived.
 - Clients `QA TEST Retest Client A 20261008` and `QA TEST Retest Client B
   20261008`: deactivated; assignment history retained.
 - Resource `QA TEST WS-20261008`: assignment released and resource marked
