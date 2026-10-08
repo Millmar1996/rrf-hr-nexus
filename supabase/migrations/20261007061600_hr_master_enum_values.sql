@@ -6,3 +6,4 @@ alter type public.lifecycle_event_type add value if not exists 'LEAVE_START';
 alter type public.lifecycle_event_type add value if not exists 'LEAVE_RETURN';
 alter type public.resource_status add value if not exists 'RESERVED';
 alter type public.resource_status add value if not exists 'RETIRED';
+;

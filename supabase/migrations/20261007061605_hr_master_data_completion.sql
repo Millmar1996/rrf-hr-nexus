@@ -370,3 +370,4 @@ end;
 $$;
 revoke execute on function public.record_lifecycle_event(uuid,public.lifecycle_event_type,date,jsonb,jsonb,text) from public, anon;
 grant execute on function public.record_lifecycle_event(uuid,public.lifecycle_event_type,date,jsonb,jsonb,text) to authenticated;
+;
