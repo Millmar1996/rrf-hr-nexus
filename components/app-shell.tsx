@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Activity, Armchair, Bell, BriefcaseBusiness, ChartNoAxesColumn, CircleHelp, FileCheck2, LayoutDashboard, LogOut, Menu, Search, Settings, Users, X } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Activity, Armchair, Bell, BriefcaseBusiness, ChartNoAxesColumn, CircleHelp, FileCheck2, LayoutDashboard, LogOut, Menu, Search, Settings, Users, X, Mail, Phone } from "lucide-react";
 import { Dashboard } from "./dashboard";
 import { CommandMenu } from "./command-menu";
 import { AuthPage } from "./auth-pages";
@@ -25,6 +26,7 @@ const navGroups = [
 type WorkspaceProfile = { full_name: string; role: string } | null;
 
 function Sidebar({ active, onNavigate, profile }: { active: string; onNavigate: () => void; profile: WorkspaceProfile }) {
+  const [supportOpen, setSupportOpen] = useState(false);
   const name = profile?.full_name || "Millmar Agustin";
   const role = profile?.role === "ADMIN" ? "HR Administrator" : profile?.role.replaceAll("_", " ") || "HR Administrator";
   return <aside className="sidebar">
@@ -34,7 +36,8 @@ function Sidebar({ active, onNavigate, profile }: { active: string; onNavigate: 
       const selected = active === item.href || (item.href === "/employees" && active.startsWith("/employees")) || (item.href === "/workforce/assignments" && active === "/workforce/client-assignments");
       return <Link onClick={onNavigate} key={item.href} href={item.href} className={"nav-link" + (selected ? " selected" : "")} aria-current={selected ? "page" : undefined}><item.icon size={17} strokeWidth={1.8}/><span>{item.label}</span></Link>;
     })}</div>)}</nav>
-    <div className="sidebar-bottom"><Link className="nav-link help-link" href="/settings"><CircleHelp size={17}/><span>Help & support</span></Link><div className="user-profile"><span className="avatar">{name.slice(0, 1).toUpperCase()}</span><span className="user-copy"><b>{name}</b><small>{role}</small></span><form action="/auth/signout" method="post" onSubmit={() => clearAccessToken()}><button className="icon-button tiny" aria-label="Sign out" title="Sign out"><LogOut size={15}/></button></form></div></div>
+    <div className="sidebar-bottom"><button className="nav-link help-link" type="button" onClick={()=>setSupportOpen(true)}><CircleHelp size={17}/><span>Help & support</span></button><div className="user-profile"><span className="avatar">{name.slice(0, 1).toUpperCase()}</span><span className="user-copy"><b>{name}</b><small>{role}</small></span><form action="/auth/signout" method="post" onSubmit={() => clearAccessToken()}><button className="icon-button tiny" aria-label="Sign out" title="Sign out"><LogOut size={15}/></button></form></div></div>
+    {supportOpen&&createPortal(<div className="modal-backdrop support-backdrop" onMouseDown={event=>{if(event.target===event.currentTarget)setSupportOpen(false);}} onKeyDown={event=>{if(event.key==="Escape")setSupportOpen(false);}}><section className="dialog support-dialog" role="dialog" aria-modal="true" aria-labelledby="support-title"><button className="icon-button dialog-close" aria-label="Close Help and Support" onClick={()=>setSupportOpen(false)} autoFocus><X size={18}/></button><div className="dialog-icon"><CircleHelp size={19}/></div><p className="eyebrow">IT SUPPORT</p><h2 id="support-title">Need help with HR Nexus?</h2><p>Contact IT support for login or access assistance, system errors, and data or report concerns.</p><div className="support-contact"><b>Nathaniel Rodriguez</b><span>System / Web Support</span><a href="tel:09752445048" aria-label="Call IT Support at 09752445048"><Phone size={16}/>09752445048</a><a href="mailto:rodrigueznathaniel019@gmail.com" aria-label="Email IT Support at rodrigueznathaniel019@gmail.com"><Mail size={16}/>rodrigueznathaniel019@gmail.com</a></div><div className="dialog-actions"><button className="button secondary" onClick={()=>setSupportOpen(false)}>Close</button></div></section></div>,document.body)}
   </aside>;
 }
 
@@ -75,7 +78,7 @@ export function AppShell({ profile, notice, authConfigured }: { profile: Workspa
   else if (active === "/employees/new") page = <EmployeeFormPage />;
   else if (active.endsWith("/edit") && active.startsWith("/employees/")) page = <EmployeeFormPage id={employeeId} />;
   else if (active.startsWith("/employees/")) page = <EmployeeProfilePage id={employeeId} />;
-  else if (active === "/workforce/lifecycle") page = <LifecyclePage />;
+  else if (active === "/workforce/lifecycle") page = <LifecyclePage role={profile?.role} />;
   else if (active === "/records/201-files") page = <FilesPage role={profile?.role} />;
   else if (active === "/resources") page = <ResourcesPage />;
   else if (active === "/reports") page = <ReportsPage />;
@@ -83,7 +86,7 @@ export function AppShell({ profile, notice, authConfigured }: { profile: Workspa
   else if (active === "/reports/workforce-changes") page = <WorkforceChangesPage />;
   else if (active === "/organization") page = <OrganizationPage />;
   else if (active === "/settings") page = <SettingsPage role={profile?.role} />;
-  else if (active === "/workforce/assignments" || active === "/workforce/client-assignments") page = <LifecyclePage assignments />;
+  else if (active === "/workforce/assignments" || active === "/workforce/client-assignments") page = <LifecyclePage assignments role={profile?.role} />;
   else page = <Dashboard name={profile?.full_name || "HR team"} />;
 
   return <div className="app-shell">
