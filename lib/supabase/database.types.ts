@@ -95,6 +95,7 @@ export type Database = {
       }
       clients: {
         Row: {
+          code: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -105,6 +106,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          code?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -115,6 +117,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          code?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -143,6 +146,7 @@ export type Database = {
       }
       departments: {
         Row: {
+          code: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -153,6 +157,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          code?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -163,6 +168,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          code?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -191,6 +197,7 @@ export type Database = {
       }
       document_types: {
         Row: {
+          display_order: number
           category: string
           created_at: string
           created_by: string | null
@@ -204,6 +211,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          display_order?: number
           category?: string
           created_at?: string
           created_by?: string | null
@@ -217,6 +225,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          display_order?: number
           category?: string
           created_at?: string
           created_by?: string | null
@@ -303,6 +312,9 @@ export type Database = {
       }
       employee_documents: {
         Row: {
+          review_status: "PENDING" | "FOR_VERIFICATION" | "COMPLETE"
+          verified_at: string | null
+          verified_by: string | null
           document_type_id: string
           employee_id: string
           expiry_date: string | null
@@ -319,6 +331,9 @@ export type Database = {
           uploaded_by: string | null
         }
         Insert: {
+          review_status?: "PENDING" | "FOR_VERIFICATION" | "COMPLETE"
+          verified_at?: string | null
+          verified_by?: string | null
           document_type_id: string
           employee_id: string
           expiry_date?: string | null
@@ -335,6 +350,9 @@ export type Database = {
           uploaded_by?: string | null
         }
         Update: {
+          review_status?: "PENDING" | "FOR_VERIFICATION" | "COMPLETE"
+          verified_at?: string | null
+          verified_by?: string | null
           document_type_id?: string
           employee_id?: string
           expiry_date?: string | null
@@ -374,6 +392,12 @@ export type Database = {
           },
         ]
       }
+      employee_document_exemptions: {
+        Row: { id: string; employee_id: string; document_type_id: string; reason: string; created_at: string; created_by: string | null }
+        Insert: { id?: string; employee_id: string; document_type_id: string; reason: string; created_at?: string; created_by?: string | null }
+        Update: { id?: string; employee_id?: string; document_type_id?: string; reason?: string; created_at?: string; created_by?: string | null }
+        Relationships: []
+      }
       employee_lifecycle_events: {
         Row: {
           created_at: string
@@ -384,6 +408,7 @@ export type Database = {
           id: string
           new_data: Json
           notes: string | null
+          separation_type_id: string | null
           previous_data: Json
         }
         Insert: {
@@ -395,6 +420,7 @@ export type Database = {
           id?: string
           new_data?: Json
           notes?: string | null
+          separation_type_id?: string | null
           previous_data?: Json
         }
         Update: {
@@ -406,6 +432,7 @@ export type Database = {
           id?: string
           new_data?: Json
           notes?: string | null
+          separation_type_id?: string | null
           previous_data?: Json
         }
         Relationships: [
@@ -414,6 +441,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_lifecycle_events_separation_type_id_fkey"
+            columns: ["separation_type_id"]
+            isOneToOne: false
+            referencedRelation: "separation_types"
             referencedColumns: ["id"]
           },
           {
@@ -655,6 +689,7 @@ export type Database = {
       }
       locations: {
         Row: {
+          code: string | null
           address: string | null
           created_at: string
           created_by: string | null
@@ -665,6 +700,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          code?: string | null
           address?: string | null
           created_at?: string
           created_by?: string | null
@@ -675,6 +711,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          code?: string | null
           address?: string | null
           created_at?: string
           created_by?: string | null
@@ -896,6 +933,12 @@ export type Database = {
           },
         ]
       }
+      separation_types: {
+        Row: { id: string; name: string; description: string | null; is_active: boolean; created_at: string; updated_at: string; created_by: string | null; updated_by: string | null }
+        Insert: { id?: string; name: string; description?: string | null; is_active?: boolean; created_at?: string; updated_at?: string; created_by?: string | null; updated_by?: string | null }
+        Update: { id?: string; name?: string; description?: string | null; is_active?: boolean; created_at?: string; updated_at?: string; created_by?: string | null; updated_by?: string | null }
+        Relationships: []
+      }
       resources: {
         Row: {
           condition: string | null
@@ -980,7 +1023,12 @@ export type Database = {
         }
         Returns: undefined
       }
+      assign_employee_resources: { Args: { p_employee_id: string; p_resource_ids: string[] }; Returns: undefined }
       archive_employee: { Args: { p_employee_id: string }; Returns: undefined }
+      verify_employee_document: { Args: { p_document_id: string }; Returns: undefined }
+      set_employee_document_review_status: { Args: { p_document_id: string; p_review_status: string }; Returns: undefined }
+      set_document_not_applicable: { Args: { p_employee_id: string; p_document_type_id: string; p_reason: string | null; p_is_applicable: boolean }; Returns: undefined }
+      set_resource_condition: { Args: { p_resource_id: string | null; p_resource_code: string | null; p_condition: string | null }; Returns: undefined }
       assign_resource: {
         Args: { p_employee_id: string; p_resource_id: string }
         Returns: undefined
@@ -1002,7 +1050,7 @@ export type Database = {
       }
       reject_access_request: { Args: { p_user_id: string }; Returns: undefined }
       save_employee: {
-        Args: { p_client_id: string; p_employee: Json; p_employee_id: string }
+        Args: { p_client_id: string | null; p_employee: Json; p_employee_id: string | null }
         Returns: string
       }
       save_resource: {
@@ -1031,7 +1079,11 @@ export type Database = {
         | "LOCATION_TRANSFER"
         | "SEPARATION"
         | "REHIRE"
-      resource_status: "AVAILABLE" | "ASSIGNED" | "MAINTENANCE" | "INACTIVE"
+        | "LEAVE_RETURN"
+        | "LEAVE_START"
+        | "CLIENT_ASSIGNMENT"
+        | "ONBOARDING"
+      resource_status: "AVAILABLE" | "ASSIGNED" | "RESERVED" | "MAINTENANCE" | "RETIRED" | "INACTIVE"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1172,8 +1224,12 @@ export const Constants = {
         "LOCATION_TRANSFER",
         "SEPARATION",
         "REHIRE",
+        "ONBOARDING",
+        "CLIENT_ASSIGNMENT",
+        "LEAVE_START",
+        "LEAVE_RETURN",
       ],
-      resource_status: ["AVAILABLE", "ASSIGNED", "MAINTENANCE", "INACTIVE"],
+      resource_status: ["AVAILABLE", "ASSIGNED", "RESERVED", "MAINTENANCE", "RETIRED", "INACTIVE"],
     },
   },
 } as const

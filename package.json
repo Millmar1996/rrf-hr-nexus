@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "import:hr-master-data": "node scripts/import-hr-master-data.mjs",
     "seed:monthly-report-fixtures": "node scripts/seed-monthly-report-fixtures.mjs",
+    "test:hr-regressions": "node --experimental-strip-types --test test/hr-rules.test.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
